@@ -3,65 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useForm, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, Info, PencilLine, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Info, PartyPopper, PencilLine, ShieldCheck } from 'lucide-react';
 import { Logo } from './Logo';
 import { event, findRace, formatFee, type RaceSlug } from '../lib/eventData';
-import { paymentService } from '../lib/payment';
+import { openCheckout, type CheckoutOrder } from '../lib/payment';
+import { registrationSchema, type RegistrationInput } from '../lib/registrationSchema';
 
-const mobile = (message: string) => z.string().trim().regex(/^[6-9]\d{9}$/, message);
-const optionalText = z.string().trim().optional();
-
-const schema = z
-  .object({
-    firstName: z.string().trim().min(2, 'Please enter your first name.'),
-    middleName: optionalText,
-    lastName: z.string().trim().min(2, 'Please enter your last name.'),
-    mobile: mobile('Please enter a valid 10-digit mobile number.'),
-    email: z.string().trim().email('Please enter a valid email.'),
-    city: z.string().trim().min(2, 'Please enter your city.'),
-    address: z.string().trim().min(5, 'Please enter your address.'),
-    pincode: z.string().trim().regex(/^\d{6}$/, 'Please enter a valid 6-digit pincode.'),
-    age: z.coerce
-      .number({ invalid_type_error: 'Please enter your age.' })
-      .int('Please enter your age in whole years.')
-      .min(event.minAge, `Participants must be at least ${event.minAge} years old on Race Day.`)
-      .max(100, 'Please enter a valid age.'),
-    gender: z.string().min(1, 'Please select a gender.'),
-    bloodGroup: optionalText,
-    occupation: optionalText,
-    occupationOther: optionalText,
-    category: z.enum(['3km', '5km', '10km'], { message: 'Please select a race category.' }),
-    tshirtSize: z.string({ invalid_type_error: 'Please select a T-shirt size.' }).min(1, 'Please select a T-shirt size.'),
-    guardianName: optionalText,
-    guardianMobile: optionalText,
-    emergencyName: z.string().trim().min(2, 'Please enter emergency contact name.'),
-    emergencyMobile: mobile('Please enter a valid emergency mobile number.'),
-    consentRisk: z.literal(true, { errorMap: () => ({ message: 'Please accept this acknowledgement.' }) }),
-    consentRules: z.literal(true, { errorMap: () => ({ message: 'Please accept this acknowledgement.' }) }),
-    consentMedia: z.literal(true, { errorMap: () => ({ message: 'Please accept this acknowledgement.' }) }),
-  })
-  .superRefine((data, ctx) => {
-    if (data.occupation === 'Other' && !data.occupationOther) {
-      ctx.addIssue({ code: 'custom', path: ['occupationOther'], message: 'Please tell us your occupation.' });
-    }
-    if (data.age < 18) {
-      if (!data.guardianName || data.guardianName.length < 2) {
-        ctx.addIssue({ code: 'custom', path: ['guardianName'], message: 'Participants under 18 need a parent or guardian.' });
-      }
-      if (!/^[6-9]\d{9}$/.test(data.guardianMobile ?? '')) {
-        ctx.addIssue({ code: 'custom', path: ['guardianMobile'], message: "Please enter the guardian's 10-digit mobile number." });
-      }
-    }
-    if (data.emergencyMobile === data.mobile) {
-      ctx.addIssue({ code: 'custom', path: ['emergencyMobile'], message: 'Please use a different number from your own.' });
-    }
-  });
-
-type Form = z.infer<typeof schema>;
+type Form = RegistrationInput;
 type Field = keyof Form;
-type Stage = 'form' | 'review' | 'pending';
+type Stage = 'form' | 'review' | 'notOpen' | 'done';
+type Confirmation = { regNo: string; race?: string };
 
 const steps = [
   ['participant', 'Participant'],
@@ -80,8 +32,10 @@ const consents: [Field, string][] = [
 export function Registration({ initialCategory }: { initialCategory?: RaceSlug }) {
   const [stage, setStage] = useState<Stage>('form');
   const [submitting, setSubmitting] = useState(false);
+  const [paymentError, setPaymentError] = useState<string>();
+  const [confirmation, setConfirmation] = useState<Confirmation>();
   const { register, handleSubmit, control, getValues, formState: { errors } } = useForm<Form>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(registrationSchema),
     defaultValues: { category: initialCategory },
   });
 
@@ -96,9 +50,30 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
 
   const confirm = async () => {
     setSubmitting(true);
-    const status = await paymentService.beginPayment(event.fee, crypto.randomUUID());
-    setSubmitting(false);
-    if (status === 'pending') goTo('pending');
+    setPaymentError(undefined);
+    try {
+      const values = getValues();
+      const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
+      const body = await response.json().catch(() => ({}));
+      if (response.status === 503) return goTo('notOpen');
+      if (!response.ok) return setPaymentError(body.message ?? 'We could not start your registration. Please try again in a moment.');
+
+      const name = [values.firstName, values.lastName].join(' ');
+      const result = await openCheckout(body as CheckoutOrder, { name, email: values.email, contact: values.mobile });
+      if (result.status === 'dismissed') return setPaymentError('Payment was cancelled. Your spot is not confirmed until you pay.');
+      if (result.status === 'failed') return setPaymentError(`${result.reason} No money was taken; please try again.`);
+
+      const verified = await fetch('/api/register/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(result.response) });
+      if (!verified.ok) {
+        return setPaymentError(`Your payment went through (ID ${result.response.razorpay_payment_id}) but we could not confirm it here. Please don't pay again; keep this ID and contact the organisers.`);
+      }
+      setConfirmation(await verified.json());
+      goTo('done');
+    } catch {
+      setPaymentError('Something went wrong. Please check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -209,8 +184,9 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
           <button className="button formSubmit" type="submit">Review registration <ArrowRight size={17} /></button>
         </form>
 
-        {stage === 'review' && <Review values={getValues()} onEdit={() => goTo('form')} onConfirm={confirm} submitting={submitting} />}
-        {stage === 'pending' && <PaymentPending onEdit={() => goTo('form')} />}
+        {stage === 'review' && <Review values={getValues()} onEdit={() => goTo('form')} onConfirm={confirm} submitting={submitting} error={paymentError} />}
+        {stage === 'notOpen' && <NotOpen onEdit={() => goTo('form')} />}
+        {stage === 'done' && confirmation && <Done confirmation={confirmation} email={getValues('email')} />}
 
         <Summary control={control} />
       </div>
@@ -264,12 +240,12 @@ function Summary({ control }: { control: Control<Form> }) {
       {event.kit.map((item) => <p className="tick" key={item}><Check size={15} />{item}</p>)}
       <p className="summaryTitle">YOUR FINISHER BENEFITS</p>
       {event.rewards.map((item) => <p className="tick" key={item}><Check size={15} />{item}</p>)}
-      <p className="pending"><ShieldCheck size={14} /> Online payment is not open yet. No payment will be taken.</p>
+      <p className="pending"><ShieldCheck size={14} /> Secure payment by Razorpay: UPI, cards and netbanking.</p>
     </aside>
   );
 }
 
-function Review({ values, onEdit, onConfirm, submitting }: { values: Form; onEdit: () => void; onConfirm: () => void; submitting: boolean }) {
+function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form; onEdit: () => void; onConfirm: () => void; submitting: boolean; error?: string }) {
   const name = [values.firstName, values.middleName, values.lastName].filter(Boolean).join(' ');
   const rows: [string, React.ReactNode][] = [
     ['Name', name],
@@ -294,8 +270,9 @@ function Review({ values, onEdit, onConfirm, submitting }: { values: Form; onEdi
       <dl>
         {rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </dl>
+      {error && <p className="paymentError" role="alert">{error}</p>}
       <div className="reviewActions">
-        <button type="button" className="button outline" onClick={onEdit}><PencilLine size={16} /> Edit details</button>
+        <button type="button" className="button outline" onClick={onEdit} disabled={submitting}><PencilLine size={16} /> Edit details</button>
         <button type="button" className="button" onClick={onConfirm} disabled={submitting}>
           {submitting ? 'Please wait…' : <>Proceed to payment · {formatFee()} <ArrowRight size={17} /></>}
         </button>
@@ -304,7 +281,7 @@ function Review({ values, onEdit, onConfirm, submitting }: { values: Form; onEdi
   );
 }
 
-function PaymentPending({ onEdit }: { onEdit: () => void }) {
+function NotOpen({ onEdit }: { onEdit: () => void }) {
   return (
     <section className="review notice" role="status">
       <p className="eyebrow dark">Almost there</p>
@@ -313,6 +290,25 @@ function PaymentPending({ onEdit }: { onEdit: () => void }) {
       <p>Please come back once registrations open to complete your entry.</p>
       <div className="reviewActions">
         <button type="button" className="button outline" onClick={onEdit}><PencilLine size={16} /> Back to my details</button>
+        <Link href="/" className="button">Back to home <ArrowRight size={17} /></Link>
+      </div>
+    </section>
+  );
+}
+
+function Done({ confirmation, email }: { confirmation: Confirmation; email: string }) {
+  return (
+    <section className="review notice done" role="status">
+      <p className="eyebrow dark"><PartyPopper size={14} /> Payment received</p>
+      <h2>YOU&apos;RE <em>IN.</em></h2>
+      <div className="regNumber">
+        <span>Registration number</span>
+        <b>{confirmation.regNo}</b>
+        {confirmation.race && <small>{confirmation.race} run</small>}
+      </div>
+      <p>Take a screenshot or note this number. Bring it with a photo ID to the Race Expo on <strong>{event.expoDates}</strong> to collect your kit.</p>
+      <p>Your confirmation details are linked to {email} and your mobile number.</p>
+      <div className="reviewActions">
         <Link href="/" className="button">Back to home <ArrowRight size={17} /></Link>
       </div>
     </section>

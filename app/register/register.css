@@ -156,3 +156,12 @@
   .review dl div { gap: 4px; grid-template-columns: 1fr; }
   .reviewActions .button { min-width: 0; flex-basis: 100%; }
 }
+
+/* Checkout feedback and confirmation ----------------------------------------- */
+
+.paymentError { margin-top: 26px; padding: 14px 16px; border-left: 3px solid #c72e12; background: #fff; color: #8f1f0a; font-size: 15px; line-height: 1.5; }
+.done .eyebrow svg { color: var(--orange); }
+.regNumber { display: inline-flex; margin: 4px 0 28px; padding: 22px 28px; flex-direction: column; gap: 4px; background: var(--lime); }
+.regNumber span { font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; }
+.regNumber b { font: 800 clamp(2.2rem, 5vw, 3.2rem)/1 var(--display); letter-spacing: -.03em; }
+.regNumber small { font: 600 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; }

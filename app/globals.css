@@ -445,7 +445,8 @@ footer { padding: 76px var(--gutter) 28px; background: var(--ink-deep); color: #
   .expo aside { margin-top: 30px; }
 
   .finishGrid { margin-top: 45px; gap: 50px; grid-template-columns: 1fr; }
-  .booth { min-height: 280px; transform: rotate(1.5deg); }
+  .booth { min-height: 260px; padding: 28px; transform: rotate(1.5deg); }
+  .booth p { font-size: clamp(1.6rem, 7.6vw, 2.1rem); }
 
   .indore { height: 650px; }
   .final { height: 620px; }

@@ -38,6 +38,7 @@ export default async function CheckIn({ searchParams }: { searchParams: Promise<
           <button className="button small" type="submit">Search</button>
         </form>
 
+        {q.length === 1 && <p className="adminHint">Type at least 2 characters to search.</p>}
         {q.length >= 2 && (
           <ul className="checkinResults">
             {results.map((row) => (

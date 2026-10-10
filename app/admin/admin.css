@@ -155,5 +155,7 @@
   .runnerGrid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
-  .adminWho { display: none; }
+  .adminWho, .adminLinkText { display: none; }
+  .adminBarActions { gap: 2px; }
+  .adminBarActions .adminIconLink { padding: 10px; }
 }

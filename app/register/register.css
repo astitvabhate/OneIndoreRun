@@ -131,21 +131,27 @@
 
 /* Responsive ------------------------------------------------------------------ */
 
-/* The summary moves above the form on tablet and the step strip scrolls sideways. */
+/* On tablets and phones the form comes first and the summary follows as a short recap;
+   the step strip scrolls sideways, with a fade at the edge to show there is more. */
 @media (max-width: 850px) {
   .regLayout { padding-top: 50px; grid-template-columns: minmax(0, 1fr); }
-  .summary { position: static; grid-row: 1; }
+  .summary { position: static; }
   .summary .summaryTitle, .summary .tick, .summary hr { display: none; }
-  .progress { overflow-x: auto; gap: 22px; scrollbar-width: none; }
+  .progress { overflow-x: auto; gap: 22px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .progress::-webkit-scrollbar { display: none; }
   .progress a, .progress span { flex: none; }
+  .progress > :last-child { padding-right: 40px; }
 }
 
 @media (max-width: 500px) {
   .regNav { padding-inline: 20px; }
   .regNav .logo { width: 112px; height: 52px; }
-  .regHero { padding-top: 55px; padding-bottom: 48px; }
+  .regHero { padding: 34px 20px 30px; }
+  .regHero h1 { margin: 10px 0; font-size: clamp(2.8rem, 14vw, 3.6rem); }
+  .regHero > p:last-child { font-size: 15px; }
   .regLayout { padding-top: 36px; }
-  .progress { padding-inline: 20px; }
+  .progress { padding: 14px 20px; gap: 18px; }
+  .progress a, .progress span { font-size: 10px; }
   .formGrid, .choiceGrid { grid-template-columns: minmax(0, 1fr); }
   .formGrid .wide { grid-column: auto; }
   .choice span { min-height: 72px; flex-direction: row; align-items: center; }

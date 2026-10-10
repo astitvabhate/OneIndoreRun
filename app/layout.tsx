@@ -20,7 +20,7 @@ export const viewport: Viewport = { themeColor: '#101613' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${ui.variable}`}>
+    <html lang="en" className={`${display.variable} ${ui.variable}`} data-scroll-behavior="smooth">
       <body>
         {/* Without JavaScript, scroll-reveal content would stay hidden. */}
         <noscript><style>{'.reveal{opacity:1!important;transform:none!important}'}</style></noscript>

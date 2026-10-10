@@ -31,3 +31,19 @@
 @media (max-width: 520px) {
   .ticket { margin: 0 0 40px; box-shadow: none; }
 }
+
+/* Kit check-in panel, shown only to signed-in staff */
+.kitPanel { display: flex; max-width: 480px; margin: 24px auto -16px; padding: 18px 20px; flex-wrap: wrap; align-items: center; gap: 14px; }
+.kitPanel > div { display: grid; flex: 1 1 220px; gap: 4px; }
+.kitPanel b { font: 800 18px var(--ui); letter-spacing: .04em; }
+.kitPanel span { font-size: 15px; line-height: 1.4; }
+.kitPanel.ready { background: #fff; border: 2px solid var(--ink); }
+.kitPanel.done { background: #1f7a3a; color: #fff; }
+.kitPanel.stop { background: #c72e12; color: #fff; }
+.kitPanel form { flex: 1 1 100%; }
+.kitButton { width: 100%; min-height: 64px; font-size: 15px; }
+.kitEdit { display: inline-flex; margin-top: 6px; align-items: center; gap: 6px; font: 600 12px var(--ui); text-decoration: underline; }
+
+@media (max-width: 520px) {
+  .kitPanel { margin: 0; }
+}

@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { RegistrationInput } from '../registrationSchema';
 import { serverConfig } from './config';
 
-export type RegistrationStatus = 'pending' | 'paid' | 'failed';
+export type RegistrationStatus = 'pending' | 'paid' | 'failed' | 'cancelled';
 export type PaymentOutcome = 'paid' | 'already_paid' | 'duplicate';
 
 // Uses the service-role key, which bypasses row-level security. Never import this from client code.
@@ -83,6 +83,8 @@ export interface TicketRow {
   amount: number;
   razorpay_payment_id: string | null;
   paid_at: string | null;
+  kit_collected_at: string | null;
+  kit_collected_by: string | null;
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -92,7 +94,7 @@ export async function getTicket(id: string) {
   if (!uuidPattern.test(id)) return null;
   const { data, error } = await db()
     .from('registrations')
-    .select('id, reg_no, status, first_name, middle_name, last_name, category, tshirt_size, amount, razorpay_payment_id, paid_at')
+    .select('id, reg_no, status, first_name, middle_name, last_name, category, tshirt_size, amount, razorpay_payment_id, paid_at, kit_collected_at, kit_collected_by')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;

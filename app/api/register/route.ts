@@ -21,6 +21,12 @@ export async function POST(request: Request) {
     // The amount always comes from the server, never from the browser.
     const amount = event.fee * 100;
     const registration = await savePending(input, amount);
+    if (registration.status === 'cancelled') {
+      return NextResponse.json(
+        { error: 'cancelled', message: `This registration for the ${findRace(input.category)?.distance} run was cancelled by the organisers. Please contact them if you'd like to rejoin.` },
+        { status: 409 },
+      );
+    }
     if (registration.status === 'paid') {
       return NextResponse.json(
         {

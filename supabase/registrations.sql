@@ -1,5 +1,6 @@
 -- One Indore Run registrations: complete setup for a NEW Supabase project.
--- (A project set up with the earlier version needs 002_one_row_per_runner.sql instead.)
+-- (A project set up with an earlier version needs 002_one_row_per_runner.sql, then
+-- 003_kit_checkin_and_admin.sql, instead.)
 -- Run once in Supabase: SQL Editor → New query → paste → Run.
 -- Age is not stored: it is worked out from date_of_birth, because race day may still change.
 
@@ -37,10 +38,20 @@ create table if not exists public.registrations (
   consent_media boolean not null,
 
   amount int not null,                    -- in paise (₹200 = 20000)
-  status text not null default 'pending' check (status in ('pending', 'paid', 'failed')),
+  status text not null default 'pending',
   razorpay_order_id text unique,          -- the order that was paid
   razorpay_payment_id text,
-  paid_at timestamptz
+  paid_at timestamptz,
+
+  kit_collected_at timestamptz,           -- set by a volunteer at the expo
+  kit_collected_by text,
+  admin_notes text,
+  updated_at timestamptz,                 -- last edit by an organiser, and who made it
+  updated_by text,
+  cancelled_at timestamptz,
+  cancel_reason text,
+
+  constraint registrations_status_check check (status in ('pending', 'paid', 'failed', 'cancelled'))
 );
 
 -- The same runner is: same mobile + race + date of birth + first name (any capitalisation).
@@ -98,11 +109,11 @@ begin
     emergency_name = excluded.emergency_name, emergency_mobile = excluded.emergency_mobile,
     consent_risk = excluded.consent_risk, consent_rules = excluded.consent_rules, consent_media = excluded.consent_media,
     amount = excluded.amount
-  where t.status <> 'paid'
+  where t.status not in ('paid', 'cancelled')
   returning t.id, t.status, t.reg_no into v_id, v_status, v_number;
 
   if v_id is null then
-    -- Already paid: report the paid row as it is.
+    -- Already paid or cancelled: report that row as it is.
     select t.id, t.status, t.reg_no into v_id, v_status, v_number
     from public.registrations t
     where t.mobile = r.mobile and t.category = r.category
@@ -168,7 +179,7 @@ select
   'OIR-' || lpad(reg_no::text, 5, '0') as registration_number,
   first_name, middle_name, last_name, mobile, email, city, date_of_birth, gender, blood_group,
   category, tshirt_size, emergency_name, emergency_mobile, guardian_name, guardian_mobile,
-  razorpay_payment_id, paid_at
+  razorpay_payment_id, paid_at, kit_collected_at, kit_collected_by
 from public.registrations
 where status = 'paid'
 order by reg_no;

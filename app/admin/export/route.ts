@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { allRegistrations, applyFilters, readFilters, toCsv } from '../../../lib/server/admin';
-import { isAdmin } from '../../../lib/server/adminAuth';
+import { getStaff } from '../../../lib/server/adminAuth';
 
-// CSV of the registrations matching the dashboard's current filters.
+// CSV of the registrations matching the dashboard's current filters. Organisers only.
 export async function GET(request: Request) {
-  if (!(await isAdmin())) return NextResponse.json({ error: 'unauthorised' }, { status: 401 });
+  if ((await getStaff())?.role !== 'admin') return NextResponse.json({ error: 'unauthorised' }, { status: 401 });
 
   const filters = readFilters(Object.fromEntries(new URL(request.url).searchParams));
   const rows = applyFilters(await allRegistrations(), filters).sort((a, b) => (a.reg_no ?? Infinity) - (b.reg_no ?? Infinity));

@@ -82,3 +82,78 @@
   .adminPage > :not(.adminBar) { margin-inline: 12px; }
   .adminPanel { padding: 14px; }
 }
+
+/* Staff bar extras */
+.adminWho { display: inline-flex; padding: 0 10px; align-items: center; color: #b9c0ba; font: 500 12px var(--ui); }
+.adminIconLink.dark { color: var(--ink); }
+.adminIconLink.dark:hover { background: #eef0ea; }
+.muted { color: #9fa39d; }
+.rowActions { display: flex; gap: 2px; }
+.pill.cancelled { background: #c72e12; color: #fff; }
+.adminTable tr.cancelled td:nth-child(2) { text-decoration: line-through; }
+
+.button.outline { background: transparent; box-shadow: inset 0 0 0 1px var(--ink); }
+.button.outline:hover { background: var(--ink); color: #fff; }
+.button.danger { background: #c72e12; color: #fff; }
+.button.danger:hover { background: #a3240d; }
+.button:disabled { cursor: wait; opacity: .6; transform: none; }
+
+/* Check-in */
+.checkinHero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
+.checkinHero h1 { font-size: 1.8rem; letter-spacing: -.03em; }
+.checkinHero p { max-width: 560px; margin-top: 6px; color: #3d433e; line-height: 1.5; }
+.checkinCount { display: grid; padding: 16px 22px; background: var(--lime); text-align: center; }
+.checkinCount b { font: 800 2.4rem/1 var(--display); }
+.checkinCount span { font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.checkinResults { margin-top: 14px; border-top: 1px solid #e3e5df; }
+.checkinResults li { border-bottom: 1px solid #e3e5df; }
+.checkinResults a { display: flex; padding: 14px 6px; align-items: center; justify-content: space-between; gap: 12px; }
+.checkinResults a:hover { background: #fafbf7; }
+.checkinName { display: grid; gap: 3px; font-weight: 700; font-size: 16px; }
+.checkinName small { color: #5f655f; font-weight: 500; font-size: 13px; }
+
+/* Runner page */
+.runnerHead h1 { margin: 8px 0 6px; font-size: clamp(1.6rem, 4vw, 2.2rem); letter-spacing: -.03em; }
+.runnerHead p { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: #3d433e; }
+.runnerHead .adminIconLink { margin-top: 10px; padding-left: 0; }
+.adminBack { display: inline-flex; align-items: center; gap: 6px; color: #5f655f; font: 600 12px var(--ui); }
+.adminSaved { margin-top: 12px; padding: 10px 12px; border-left: 3px solid #1f7a3a; background: #eaf6ee; color: #14532a; }
+.runnerGrid { display: grid; gap: 0 20px; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); align-items: start; }
+.runnerGrid h3 { margin: 18px 0 8px; font: 700 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+
+.adminForm { display: grid; gap: 18px; }
+.adminForm fieldset { display: grid; gap: 12px 14px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); padding: 14px 0 0; border-top: 1px solid #e3e5df; }
+.adminForm legend { padding-right: 8px; font: 700 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.adminForm label { display: grid; gap: 5px; color: #3d433e; font: 600 11px var(--ui); letter-spacing: .04em; text-transform: uppercase; }
+.adminForm .wide, .adminForm .wide label { grid-column: 1 / -1; }
+.adminForm input, .adminForm select, .adminForm textarea { min-height: 40px; padding: 8px 10px; border: 1px solid #b9bdb6; background: #fff; color: var(--ink); font: 500 15px var(--display); letter-spacing: 0; text-transform: none; }
+.adminForm textarea { resize: vertical; }
+.adminForm input:focus, .adminForm select:focus, .adminForm textarea:focus { border-color: var(--ink); outline: 2px solid var(--lime); }
+.adminForm label.invalid input { border-color: #c72e12; }
+.adminForm small { color: #c72e12; font: 500 12px var(--display); letter-spacing: 0; text-transform: none; }
+.adminForm > .button { justify-self: start; }
+
+.kitState { display: flex; margin: 10px 0 12px; align-items: center; gap: 8px; color: #3d433e; }
+.kitState.done { color: #1f7a3a; font-weight: 700; }
+.adminFacts { display: grid; margin-top: 10px; gap: 6px 14px; grid-template-columns: auto 1fr; }
+.adminFacts div { display: contents; }
+.adminFacts dt { color: #6b716b; font: 600 11px/1.9 var(--ui); text-transform: uppercase; }
+.adminFacts dd { overflow-wrap: anywhere; }
+.attempts li { display: grid; padding: 8px 0; gap: 2px; border-bottom: 1px solid #e3e5df; }
+.attempts li span { font-weight: 700; }
+.attempts li.paid span { color: #1f7a3a; }
+.attempts li.duplicate span, .attempts li.failed span { color: #c72e12; }
+.attempts small { color: #6b716b; overflow-wrap: anywhere; }
+
+.adminPanel.danger { border-left: 4px solid #c72e12; }
+.cancelForm { display: grid; gap: 10px; }
+.cancelForm > input { min-height: 40px; padding: 8px 10px; border: 1px solid #b9bdb6; font: 500 14px var(--display); }
+.cancelForm label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.cancelForm .button { justify-self: start; }
+
+@media (max-width: 900px) {
+  .runnerGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .adminWho { display: none; }
+}

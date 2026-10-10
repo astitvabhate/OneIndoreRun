@@ -1,19 +1,18 @@
 import Link from 'next/link';
-import { Download, LogOut, RefreshCw, Search, Ticket } from 'lucide-react';
-import { Logo } from '../../components/Logo';
+import { Download, Pencil, RefreshCw, Search, Ticket } from 'lucide-react';
 import { event, formatFee } from '../../lib/eventData';
 import { ageOnRaceDay } from '../../lib/registrationSchema';
 import {
-  allRegistrations, applyFilters, formatDateTime, fullName, raceLabel, readFilters, refundsDue, regNoLabel, summarise,
+  allRegistrations, applyFilters, formatDateTime, formatTime, fullName, raceLabel, readFilters, refundsDue, regNoLabel, summarise,
   type AdminRegistration, type Filters,
 } from '../../lib/server/admin';
 import { requireAdmin } from '../../lib/server/adminAuth';
-import { logout } from './actions';
+import { StaffBar } from './StaffBar';
 
 const perPage = 50;
 
 export default async function AdminDashboard({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  await requireAdmin();
+  const staff = await requireAdmin();
   const params = await searchParams;
   const filters = readFilters(params);
   const page = Math.max(1, Number(params.page) || 1);
@@ -29,6 +28,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     if (merged.q) next.set('q', merged.q);
     if (merged.race) next.set('race', merged.race);
     if (merged.status !== 'paid') next.set('status', merged.status);
+    if (merged.kit) next.set('kit', merged.kit);
     if (merged.page > 1) next.set('page', String(merged.page));
     const text = next.toString();
     return text ? `?${text}` : '';
@@ -36,21 +36,16 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
 
   return (
     <main className="adminPage">
-      <header className="adminBar">
-        <Logo />
-        <span className="adminTitle">Organiser dashboard</span>
-        <div className="adminBarActions">
-          <Link href={`/admin${query({})}`} className="adminIconLink"><RefreshCw size={16} /> Refresh</Link>
-          <form action={logout}><button type="submit" className="adminIconLink"><LogOut size={16} /> Sign out</button></form>
-        </div>
-      </header>
+      <StaffBar staff={staff} title="Organiser dashboard" />
 
       <section className="adminStats" aria-label="Summary">
         <Stat label="Confirmed runners" value={stats.paid} />
         <Stat label="Collected" value={`₹${stats.collected.toLocaleString('en-IN')}`} />
+        <Stat label="Kits collected" value={`${stats.kits} / ${stats.paid}`} hint={stats.paid ? `${Math.round((stats.kits / stats.paid) * 100)}% done` : 'At the expo'} />
         <Stat label="Started, not paid" value={stats.unpaid} hint="Opened checkout but haven't paid" />
         <Stat label="Under 18" value={stats.minors} hint="Paid runners needing a guardian" />
         <Stat label="Refunds due" value={refunds.length} tone={refunds.length ? 'alert' : undefined} hint={refunds.length ? 'See the list below' : 'None'} />
+        {stats.cancelled > 0 && <Stat label="Cancelled" value={stats.cancelled} hint="Not counted above" />}
       </section>
 
       <section className="adminPanel">
@@ -105,6 +100,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       <section className="adminPanel">
         <div className="adminPanelHead">
           <h2>Registrations</h2>
+          <Link href={`/admin${query({})}`} className="adminIconLink dark"><RefreshCw size={15} /> Refresh</Link>
           <a className="button small" href={`/admin/export${query({ page: 1 })}`}><Download size={15} /> Download CSV ({matches.length})</a>
         </div>
 
@@ -120,10 +116,16 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
           <select name="status" defaultValue={filters.status} aria-label="Payment status">
             <option value="paid">Paid</option>
             <option value="unpaid">Not paid</option>
+            <option value="cancelled">Cancelled</option>
             <option value="all">All</option>
           </select>
+          <select name="kit" defaultValue={filters.kit} aria-label="Kit">
+            <option value="">Any kit status</option>
+            <option value="waiting">Kit not collected</option>
+            <option value="collected">Kit collected</option>
+          </select>
           <button className="button small" type="submit">Apply</button>
-          {(filters.q || filters.race || filters.status !== 'paid') && <Link href="/admin" className="adminClear">Clear</Link>}
+          {(filters.q || filters.race || filters.kit || filters.status !== 'paid') && <Link href="/admin" className="adminClear">Clear</Link>}
         </form>
 
         <p className="adminHint">{matches.length} {matches.length === 1 ? 'registration' : 'registrations'}{pages > 1 && ` · page ${page} of ${pages}`}. Tap a name for full details.</p>
@@ -131,11 +133,11 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         <div className="adminTableWrap">
           <table className="adminTable list">
             <thead>
-              <tr><th>Reg. no.</th><th>Runner</th><th>Race</th><th>T-shirt</th><th>Age</th><th>Mobile</th><th>Status</th><th>Paid / started</th><th /></tr>
+              <tr><th>Reg. no.</th><th>Runner</th><th>Race</th><th>T-shirt</th><th>Age</th><th>Mobile</th><th>Status</th><th>Kit</th><th>Paid / started</th><th /></tr>
             </thead>
             <tbody>
               {shown.map((row) => <RegistrationRow key={row.id} row={row} />)}
-              {shown.length === 0 && <tr><td colSpan={9} className="adminEmpty">No registrations match.</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={10} className="adminEmpty">No registrations match.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -165,6 +167,7 @@ function Stat({ label, value, hint, tone }: { label: string; value: number | str
 
 function RegistrationRow({ row }: { row: AdminRegistration }) {
   const paid = row.status === 'paid';
+  const cancelled = row.status === 'cancelled';
   const age = ageOnRaceDay(row.date_of_birth);
   const details: [string, string | null][] = [
     ['Email', row.email],
@@ -178,10 +181,12 @@ function RegistrationRow({ row }: { row: AdminRegistration }) {
     ['Photo consent', row.consent_media ? 'Yes' : 'No'],
     ['Payment ID', row.razorpay_payment_id],
     ['Started', formatDateTime(row.created_at)],
+    ['Notes', row.admin_notes],
+    ['Cancelled', cancelled ? `${formatDateTime(row.cancelled_at)}${row.cancel_reason ? ` — ${row.cancel_reason}` : ''}` : null],
   ];
 
   return (
-    <tr className={paid ? '' : 'unpaid'}>
+    <tr className={paid ? '' : cancelled ? 'unpaid cancelled' : 'unpaid'}>
       <td className="mono">{regNoLabel(row)}</td>
       <td>
         <details>
@@ -193,9 +198,13 @@ function RegistrationRow({ row }: { row: AdminRegistration }) {
       <td>{row.tshirt_size}</td>
       <td className={age < 18 ? 'minor' : ''}>{age}</td>
       <td className="mono">{row.mobile}</td>
-      <td><span className={paid ? 'pill paid' : 'pill'}>{paid ? 'Paid' : 'Not paid'}</span></td>
+      <td><span className={paid ? 'pill paid' : cancelled ? 'pill cancelled' : 'pill'}>{paid ? 'Paid' : cancelled ? 'Cancelled' : 'Not paid'}</span></td>
+      <td>{row.kit_collected_at ? <span title={`by ${row.kit_collected_by}`}>✓ {formatTime(row.kit_collected_at)}</span> : paid ? <span className="muted">—</span> : ''}</td>
       <td>{formatDateTime(row.paid_at ?? row.created_at)}</td>
-      <td>{paid && <a href={`/ticket/${row.id}`} target="_blank" rel="noopener" className="adminIconLink" aria-label={`Ticket for ${fullName(row)}`}><Ticket size={16} /></a>}</td>
+      <td className="rowActions">
+        <Link href={`/admin/runner/${row.id}`} className="adminIconLink" aria-label={`Edit ${fullName(row)}`}><Pencil size={15} /></Link>
+        {(paid || cancelled) && <a href={`/ticket/${row.id}`} target="_blank" rel="noopener" className="adminIconLink" aria-label={`Ticket for ${fullName(row)}`}><Ticket size={16} /></a>}
+      </td>
     </tr>
   );
 }

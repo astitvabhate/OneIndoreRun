@@ -6,7 +6,7 @@ export type RegistrationStatus = 'pending' | 'paid' | 'failed';
 export type PaymentOutcome = 'paid' | 'already_paid' | 'duplicate';
 
 // Uses the service-role key, which bypasses row-level security. Never import this from client code.
-function db() {
+export function db() {
   return createClient(serverConfig.supabaseUrl!, serverConfig.supabaseServiceKey!, { auth: { persistSession: false } });
 }
 

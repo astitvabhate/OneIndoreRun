@@ -22,7 +22,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
   const paid = ticket.status === 'paid';
   const qrSvg = paid ? await ticketQrSvg(ticketUrl(siteOrigin(await headers()), ticket.id)) : '';
   const details: [string, string][] = [
-    ['Registration no.', formatRegNo(ticket.reg_no)],
+    ['Registration no.', ticket.reg_no ? formatRegNo(ticket.reg_no) : '—'],
     ['T-shirt size', ticket.tshirt_size],
     ['Kit collection (Expo)', event.expoDates],
     ['Race day', raceDayLabel()],

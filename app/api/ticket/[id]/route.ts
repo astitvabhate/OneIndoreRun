@@ -17,7 +17,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return new Response(Buffer.from(pdf), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${formatRegNo(ticket.reg_no)}-one-indore-run-ticket.pdf"`,
+        'Content-Disposition': `attachment; filename="${formatRegNo(ticket.reg_no!)}-one-indore-run-ticket.pdf"`,
         'Cache-Control': 'private, no-store',
       },
     });

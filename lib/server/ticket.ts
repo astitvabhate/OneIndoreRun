@@ -63,7 +63,8 @@ function label(page: PDFPage, font: PDFFont, text: string, x: number, y: number)
 /** Builds the downloadable race ticket: header, race band, runner, QR code and kit details. */
 export async function renderTicketPdf(ticket: TicketRow, url: string) {
   const pdf = await PDFDocument.create();
-  pdf.setTitle(`One Indore Run ticket ${formatRegNo(ticket.reg_no)}`);
+  const regNo = formatRegNo(ticket.reg_no!); // only paid tickets, which always have a number
+  pdf.setTitle(`One Indore Run ticket ${regNo}`);
   pdf.setAuthor('One Indore Run');
 
   const W = 420;
@@ -92,7 +93,6 @@ export async function renderTicketPdf(ticket: TicketRow, url: string) {
   const bandH = 70;
   const bandY = H - headerH - bandH;
   const race = findRace(ticket.category)?.distance ?? ticket.category;
-  const regNo = formatRegNo(ticket.reg_no);
   page.drawRectangle({ x: 0, y: bandY, width: W, height: bandH, color: lime });
   label(page, bold, 'Race', margin, bandY + bandH - 20);
   page.drawText(race, { x: margin, y: bandY + 16, size: 32, font: bold, color: ink });

@@ -3,35 +3,11 @@ import type { RegistrationInput } from '../registrationSchema';
 import { serverConfig } from './config';
 
 export type RegistrationStatus = 'pending' | 'paid' | 'failed';
-
-export interface RegistrationRow {
-  id: string;
-  reg_no: number;
-  status: RegistrationStatus;
-  category: string;
-  amount: number;
-  razorpay_order_id: string | null;
-}
+export type PaymentOutcome = 'paid' | 'already_paid' | 'duplicate';
 
 // Uses the service-role key, which bypasses row-level security. Never import this from client code.
 function db() {
   return createClient(serverConfig.supabaseUrl!, serverConfig.supabaseServiceKey!, { auth: { persistSession: false } });
-}
-
-const columns = 'id, reg_no, status, category, amount, razorpay_order_id';
-
-/** A paid entry for this mobile number and race, if one exists. */
-export async function findPaid(mobile: string, category: string) {
-  const { data, error } = await db()
-    .from('registrations')
-    .select(columns)
-    .eq('mobile', mobile)
-    .eq('category', category)
-    .eq('status', 'paid')
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return data as RegistrationRow | null;
 }
 
 const toColumns = (input: RegistrationInput, amount: number) => ({
@@ -59,42 +35,45 @@ const toColumns = (input: RegistrationInput, amount: number) => ({
   amount,
 });
 
-/** Each checkout attempt gets its own pending row, so a late payment on an old order still matches. */
+/**
+ * Saves the runner's latest details. A repeat attempt by the same runner (mobile, race, date of
+ * birth, first name) reuses their unpaid row. If they have already paid, the paid row comes back
+ * unchanged with status 'paid'. Runs as one database statement, so double-clicks can't make two rows.
+ */
 export async function savePending(input: RegistrationInput, amount: number) {
-  const { data, error } = await db()
-    .from('registrations')
-    .insert({ ...toColumns(input, amount), status: 'pending' })
-    .select(columns)
-    .single();
+  const { data, error } = await db().rpc('save_pending_registration', { p: toColumns(input, amount) });
   if (error) throw error;
-  return data as RegistrationRow;
+  const [row] = data as { ticket_id: string; reg_status: RegistrationStatus; reg_number: number | null }[];
+  return { id: row.ticket_id, status: row.reg_status, regNo: row.reg_number };
 }
 
-export async function attachOrder(id: string, orderId: string) {
-  const { error } = await db().from('registrations').update({ razorpay_order_id: orderId }).eq('id', id);
+/** Links a Razorpay order to its runner. A runner can have several orders (one per attempt). */
+export async function recordOrder(registrationId: string, orderId: string, amount: number) {
+  const { error } = await db().from('payment_orders').insert({ order_id: orderId, registration_id: registrationId, amount });
   if (error) throw error;
 }
 
-/** Marks the registration for this order as paid; null if no such order. Safe to call twice (verify + webhook). */
+/**
+ * Records a captured payment. The first one marks the runner paid and assigns the next
+ * registration number; repeats are harmless; a second, different payment is flagged 'duplicate'
+ * for refund. Null for an unknown order.
+ */
 export async function markPaid(orderId: string, paymentId: string) {
-  const { data, error } = await db()
-    .from('registrations')
-    .update({ status: 'paid', razorpay_payment_id: paymentId, paid_at: new Date().toISOString() })
-    .eq('razorpay_order_id', orderId)
-    .select(columns)
-    .maybeSingle();
+  const { data, error } = await db().rpc('mark_order_paid', { p_order_id: orderId, p_payment_id: paymentId });
   if (error) throw error;
-  return data as RegistrationRow | null;
+  const [row] = (data ?? []) as { ticket_id: string; reg_number: number; race: string; outcome: PaymentOutcome }[];
+  return row ? { id: row.ticket_id, regNo: row.reg_number, category: row.race, outcome: row.outcome } : null;
 }
 
+/** A failed attempt only affects its own order; the runner can retry. Never touches paid orders. */
 export async function markFailed(orderId: string) {
-  const { error } = await db().from('registrations').update({ status: 'failed' }).eq('razorpay_order_id', orderId).neq('status', 'paid');
+  const { error } = await db().from('payment_orders').update({ status: 'failed' }).eq('order_id', orderId).eq('status', 'created');
   if (error) throw error;
 }
 
 export interface TicketRow {
   id: string;
-  reg_no: number;
+  reg_no: number | null;
   status: RegistrationStatus;
   first_name: string;
   middle_name: string | null;

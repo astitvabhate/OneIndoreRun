@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { event, findRace } from '../../../lib/eventData';
 import { formatRegNo, registrationSchema } from '../../../lib/registrationSchema';
 import { isRegistrationOpen, serverConfig } from '../../../lib/server/config';
-import { attachOrder, findPaid, savePending } from '../../../lib/server/db';
+import { recordOrder, savePending } from '../../../lib/server/db';
 import { createOrder } from '../../../lib/server/razorpay';
 
-// Step 1 of checkout: validate, save a pending registration and open a Razorpay order for it.
+// Step 1 of checkout: validate, save (or refresh) the runner's pending row and open a Razorpay order for it.
 export async function POST(request: Request) {
   if (!isRegistrationOpen()) {
     return NextResponse.json({ error: 'not_open' }, { status: 503 });
@@ -18,23 +18,26 @@ export async function POST(request: Request) {
   const input = parsed.data;
 
   try {
-    const alreadyPaid = await findPaid(input.mobile, input.category);
-    if (alreadyPaid) {
+    // The amount always comes from the server, never from the browser.
+    const amount = event.fee * 100;
+    const registration = await savePending(input, amount);
+    if (registration.status === 'paid') {
       return NextResponse.json(
-        { error: 'duplicate', message: `This mobile number is already registered for the ${findRace(input.category)?.distance} run (${formatRegNo(alreadyPaid.reg_no)}).` },
+        {
+          error: 'duplicate',
+          ticketId: registration.id,
+          message: `${input.firstName} is already registered for the ${findRace(input.category)?.distance} run (${formatRegNo(registration.regNo!)}). There's no need to pay again.`,
+        },
         { status: 409 },
       );
     }
 
-    // The amount always comes from the server, never from the browser.
-    const amount = event.fee * 100;
-    const registration = await savePending(input, amount);
-    const order = await createOrder(amount, formatRegNo(registration.reg_no), {
+    const order = await createOrder(amount, `reg_${registration.id.slice(0, 8)}_${Date.now().toString(36)}`, {
       registration_id: registration.id,
       category: input.category,
       mobile: input.mobile,
     });
-    await attachOrder(registration.id, order.id);
+    await recordOrder(registration.id, order.id, amount);
 
     return NextResponse.json({
       keyId: serverConfig.razorpayKeyId,

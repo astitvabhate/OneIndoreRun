@@ -168,3 +168,4 @@
 .fieldHint { display: block; margin-top: 6px; color: #5f655f; font: 500 13px var(--display); letter-spacing: 0; text-transform: none; }
 .formFields input[type='date'] { cursor: pointer; }
 .ticketTip { margin-top: 18px; color: #5f655f; font-size: 14px; }
+.paymentError a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }

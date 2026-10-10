@@ -13,7 +13,8 @@ import { ageOnRaceDay, registrationSchema, type RegistrationInput } from '../lib
 type Form = RegistrationInput;
 type Field = keyof Form;
 type Stage = 'form' | 'review' | 'notOpen' | 'done';
-type Confirmation = { ticketId: string; regNo: string; race?: string };
+type Confirmation = { ticketId: string; regNo: string; race?: string; duplicatePayment?: boolean };
+type CheckoutError = { message: string; ticketId?: string };
 
 const steps = [
   ['participant', 'Participant'],
@@ -32,7 +33,8 @@ const consents: [Field, string][] = [
 export function Registration({ initialCategory }: { initialCategory?: RaceSlug }) {
   const [stage, setStage] = useState<Stage>('form');
   const [submitting, setSubmitting] = useState(false);
-  const [paymentError, setPaymentError] = useState<string>();
+  const [checkoutError, setCheckoutError] = useState<CheckoutError>();
+  const setPaymentError = (message: string, ticketId?: string) => setCheckoutError({ message, ticketId });
   const [confirmation, setConfirmation] = useState<Confirmation>();
   const { register, handleSubmit, control, getValues, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(registrationSchema),
@@ -51,13 +53,13 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
 
   const confirm = async () => {
     setSubmitting(true);
-    setPaymentError(undefined);
+    setCheckoutError(undefined);
     try {
       const values = getValues();
       const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
       const body = await response.json().catch(() => ({}));
       if (response.status === 503) return goTo('notOpen');
-      if (!response.ok) return setPaymentError(body.message ?? 'We could not start your registration. Please try again in a moment.');
+      if (!response.ok) return setPaymentError(body.message ?? 'We could not start your registration. Please try again in a moment.', body.ticketId);
 
       const name = [values.firstName, values.lastName].join(' ');
       const result = await openCheckout(body as CheckoutOrder, { name, email: values.email, contact: values.mobile });
@@ -185,7 +187,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
           <button className="button formSubmit" type="submit">Review registration <ArrowRight size={17} /></button>
         </form>
 
-        {stage === 'review' && <Review values={getValues()} onEdit={() => goTo('form')} onConfirm={confirm} submitting={submitting} error={paymentError} />}
+        {stage === 'review' && <Review values={getValues()} onEdit={() => goTo('form')} onConfirm={confirm} submitting={submitting} error={checkoutError} />}
         {stage === 'notOpen' && <NotOpen onEdit={() => goTo('form')} />}
         {stage === 'done' && confirmation && <Done confirmation={confirmation} />}
 
@@ -255,7 +257,7 @@ function Summary({ control }: { control: Control<Form> }) {
   );
 }
 
-function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form; onEdit: () => void; onConfirm: () => void; submitting: boolean; error?: string }) {
+function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form; onEdit: () => void; onConfirm: () => void; submitting: boolean; error?: CheckoutError }) {
   const name = [values.firstName, values.middleName, values.lastName].filter(Boolean).join(' ');
   const rows: [string, React.ReactNode][] = [
     ['Name', name],
@@ -280,7 +282,12 @@ function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form
       <dl>
         {rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </dl>
-      {error && <p className="paymentError" role="alert">{error}</p>}
+      {error && (
+        <p className="paymentError" role="alert">
+          {error.message}
+          {error.ticketId && <> <a href={`/ticket/${error.ticketId}`} target="_blank" rel="noopener">Open your ticket</a></>}
+        </p>
+      )}
       <div className="reviewActions">
         <button type="button" className="button outline" onClick={onEdit} disabled={submitting}><PencilLine size={16} /> Edit details</button>
         <button type="button" className="button" onClick={onConfirm} disabled={submitting}>
@@ -316,6 +323,9 @@ function Done({ confirmation }: { confirmation: Confirmation }) {
         <b>{confirmation.regNo}</b>
         {confirmation.race && <small>{confirmation.race} run</small>}
       </div>
+      {confirmation.duplicatePayment && (
+        <p className="paymentError" role="alert">You had already paid for this registration in another window, so this second payment will be refunded. Please share your payment ID with the organisers if it isn&apos;t back within 7 days.</p>
+      )}
       <p>Download your digital ticket now. Show its QR code with a photo ID at the Race Expo on <strong>{event.expoDates}</strong> to collect your kit and bib.</p>
       <div className="reviewActions">
         <a href={`/api/ticket/${confirmation.ticketId}`} className="button" download><Download size={17} /> Download ticket (PDF)</a>

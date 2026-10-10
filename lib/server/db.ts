@@ -91,3 +91,31 @@ export async function markFailed(orderId: string) {
   const { error } = await db().from('registrations').update({ status: 'failed' }).eq('razorpay_order_id', orderId).neq('status', 'paid');
   if (error) throw error;
 }
+
+export interface TicketRow {
+  id: string;
+  reg_no: number;
+  status: RegistrationStatus;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  category: string;
+  tshirt_size: string;
+  amount: number;
+  razorpay_payment_id: string | null;
+  paid_at: string | null;
+}
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Looks a ticket up by its unguessable registration id; null for unknown or malformed ids. */
+export async function getTicket(id: string) {
+  if (!uuidPattern.test(id)) return null;
+  const { data, error } = await db()
+    .from('registrations')
+    .select('id, reg_no, status, first_name, middle_name, last_name, category, tshirt_size, amount, razorpay_payment_id, paid_at')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data as TicketRow | null;
+}

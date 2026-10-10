@@ -167,3 +167,4 @@
 .regNumber small { font: 600 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
 .fieldHint { display: block; margin-top: 6px; color: #5f655f; font: 500 13px var(--display); letter-spacing: 0; text-transform: none; }
 .formFields input[type='date'] { cursor: pointer; }
+.ticketTip { margin-top: 18px; color: #5f655f; font-size: 14px; }

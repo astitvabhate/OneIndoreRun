@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useForm, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, Info, PartyPopper, PencilLine, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Download, Info, PartyPopper, PencilLine, ShieldCheck, Ticket } from 'lucide-react';
 import { Logo } from './Logo';
 import { ageReferenceDate, event, findRace, formatDate, formatFee, type RaceSlug } from '../lib/eventData';
 import { openCheckout, type CheckoutOrder } from '../lib/payment';
@@ -13,7 +13,7 @@ import { ageOnRaceDay, registrationSchema, type RegistrationInput } from '../lib
 type Form = RegistrationInput;
 type Field = keyof Form;
 type Stage = 'form' | 'review' | 'notOpen' | 'done';
-type Confirmation = { regNo: string; race?: string };
+type Confirmation = { ticketId: string; regNo: string; race?: string };
 
 const steps = [
   ['participant', 'Participant'],
@@ -187,7 +187,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
 
         {stage === 'review' && <Review values={getValues()} onEdit={() => goTo('form')} onConfirm={confirm} submitting={submitting} error={paymentError} />}
         {stage === 'notOpen' && <NotOpen onEdit={() => goTo('form')} />}
-        {stage === 'done' && confirmation && <Done confirmation={confirmation} email={getValues('email')} />}
+        {stage === 'done' && confirmation && <Done confirmation={confirmation} />}
 
         <Summary control={control} />
       </div>
@@ -306,7 +306,7 @@ function NotOpen({ onEdit }: { onEdit: () => void }) {
   );
 }
 
-function Done({ confirmation, email }: { confirmation: Confirmation; email: string }) {
+function Done({ confirmation }: { confirmation: Confirmation }) {
   return (
     <section className="review notice done" role="status">
       <p className="eyebrow dark"><PartyPopper size={14} /> Payment received</p>
@@ -316,11 +316,12 @@ function Done({ confirmation, email }: { confirmation: Confirmation; email: stri
         <b>{confirmation.regNo}</b>
         {confirmation.race && <small>{confirmation.race} run</small>}
       </div>
-      <p>Take a screenshot or note this number. Bring it with a photo ID to the Race Expo on <strong>{event.expoDates}</strong> to collect your kit.</p>
-      <p>Your confirmation details are linked to {email} and your mobile number.</p>
+      <p>Download your digital ticket now. Show its QR code with a photo ID at the Race Expo on <strong>{event.expoDates}</strong> to collect your kit and bib.</p>
       <div className="reviewActions">
-        <Link href="/" className="button">Back to home <ArrowRight size={17} /></Link>
+        <a href={`/api/ticket/${confirmation.ticketId}`} className="button" download><Download size={17} /> Download ticket (PDF)</a>
+        <a href={`/ticket/${confirmation.ticketId}`} className="button outline" target="_blank" rel="noopener"><Ticket size={17} /> Open ticket page</a>
       </div>
+      <p className="ticketTip">Tip: bookmark the ticket page too. You can re-download the PDF from it any time.</p>
     </section>
   );
 }

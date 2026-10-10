@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   try {
     const registration = await markPaid(orderId, paymentId);
     if (!registration) return NextResponse.json({ error: 'unknown_order' }, { status: 404 });
-    return NextResponse.json({ regNo: formatRegNo(registration.reg_no), race: findRace(registration.category)?.distance });
+    return NextResponse.json({ ticketId: registration.id, regNo: formatRegNo(registration.reg_no), race: findRace(registration.category)?.distance });
   } catch (error) {
     console.error('Payment verification failed', error);
     return NextResponse.json({ error: 'server' }, { status: 500 });

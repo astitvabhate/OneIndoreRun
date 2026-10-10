@@ -6,9 +6,9 @@ import { useForm, useWatch, type Control, type FieldErrors, type UseFormRegister
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Check, Info, PartyPopper, PencilLine, ShieldCheck } from 'lucide-react';
 import { Logo } from './Logo';
-import { event, findRace, formatFee, type RaceSlug } from '../lib/eventData';
+import { ageReferenceDate, event, findRace, formatDate, formatFee, type RaceSlug } from '../lib/eventData';
 import { openCheckout, type CheckoutOrder } from '../lib/payment';
-import { registrationSchema, type RegistrationInput } from '../lib/registrationSchema';
+import { ageOnRaceDay, registrationSchema, type RegistrationInput } from '../lib/registrationSchema';
 
 type Form = RegistrationInput;
 type Field = keyof Form;
@@ -39,9 +39,10 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
     defaultValues: { category: initialCategory },
   });
 
-  const age = useWatch({ control, name: 'age' });
+  const dateOfBirth = useWatch({ control, name: 'dateOfBirth' });
   const occupation = useWatch({ control, name: 'occupation' });
-  const isMinor = Number(age) >= event.minAge && Number(age) < 18;
+  const age = ageOnRaceDay(dateOfBirth ?? '');
+  const isMinor = age >= event.minAge && age < 18;
 
   const goTo = (next: Stage) => {
     setStage(next);
@@ -112,7 +113,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
               <TextField name="city" label="City" autoComplete="address-level2" register={register} errors={errors} />
               <TextField name="address" label="Address" autoComplete="street-address" wide register={register} errors={errors} />
               <TextField name="pincode" label="Pincode" inputMode="numeric" maxLength={6} autoComplete="postal-code" register={register} errors={errors} />
-              <TextField name="age" label="Age on race day" type="number" inputMode="numeric" min={event.minAge} max={100} register={register} errors={errors} />
+              <TextField name="dateOfBirth" label="Date of birth" type="date" min="1920-01-01" max={today()} autoComplete="bday" hint={ageHint(age)} register={register} errors={errors} />
               <SelectField name="gender" label="Gender" placeholder="Select" options={['Male', 'Female', 'Other']} register={register} errors={errors} />
               <SelectField name="bloodGroup" label="Blood group" placeholder="Select (optional)" options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']} register={register} errors={errors} />
               <SelectField name="occupation" label="Occupation" placeholder="Select (optional)" options={['Student', 'Business', 'Service', 'Retired', 'Other']} register={register} errors={errors} />
@@ -194,14 +195,23 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
   );
 }
 
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** Tells runners which age counts, since race day may not be announced yet. */
+function ageHint(age: number) {
+  if (Number.isNaN(age)) return event.raceDate ? `We use your age on race day, ${formatDate(event.raceDate)}.` : `Race day is yet to be announced; we use your age on ${formatDate(ageReferenceDate())}.`;
+  return event.raceDate ? `You'll be ${age} on race day.` : `You'll be ${age} on ${formatDate(ageReferenceDate())} (race day to be announced).`;
+}
+
 type FieldProps = { name: Field; label: string; register: UseFormRegister<Form>; errors: FieldErrors<Form> };
 
-function TextField({ name, label, wide, register, errors, ...input }: FieldProps & { wide?: boolean } & React.InputHTMLAttributes<HTMLInputElement>) {
+function TextField({ name, label, wide, hint, register, errors, ...input }: FieldProps & { wide?: boolean; hint?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   const message = errors[name]?.message;
   return (
     <label className={wide ? 'wide' : undefined}>
       {label}
       <input type="text" aria-invalid={!!message} {...input} {...register(name)} />
+      {hint && !message && <small className="fieldHint">{hint}</small>}
       <FieldError message={message} />
     </label>
   );
@@ -252,7 +262,7 @@ function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form
     ['Mobile', values.mobile],
     ['Email', values.email],
     ['Address', `${values.address}, ${values.city} – ${values.pincode}`],
-    ['Age', values.age],
+    ['Date of birth', `${formatDate(values.dateOfBirth)} (age ${ageOnRaceDay(values.dateOfBirth)} on ${event.raceDate ? 'race day' : formatDate(ageReferenceDate())})`],
     ['Gender', values.gender],
     ['Blood group', values.bloodGroup || '—'],
     ['Occupation', (values.occupation === 'Other' ? values.occupationOther : values.occupation) || '—'],

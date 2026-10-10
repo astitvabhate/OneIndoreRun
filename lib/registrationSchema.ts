@@ -1,10 +1,13 @@
 import { z } from 'zod';
-import { event } from './eventData';
+import { ageOn, ageReferenceDate, event, formatDate, isValidDate } from './eventData';
 
 // Shared by the form (instant feedback) and the API (the check that actually counts).
 const mobilePattern = /^[6-9]\d{9}$/;
 const mobile = (message: string) => z.string().trim().regex(mobilePattern, message);
 const optionalText = z.string().trim().max(200).optional();
+/** Age on race day (or the fallback date); NaN for an invalid date so range checks skip it. */
+export const ageOnRaceDay = (dateOfBirth: string) => (isValidDate(dateOfBirth) ? ageOn(dateOfBirth, ageReferenceDate()) : NaN);
+const ageDeadline = event.raceDate ? 'race day' : formatDate(ageReferenceDate());
 
 export const registrationSchema = z
   .object({
@@ -16,11 +19,11 @@ export const registrationSchema = z
     city: z.string().trim().min(2, 'Please enter your city.').max(80),
     address: z.string().trim().min(5, 'Please enter your address.').max(300),
     pincode: z.string().trim().regex(/^\d{6}$/, 'Please enter a valid 6-digit pincode.'),
-    age: z.coerce
-      .number({ invalid_type_error: 'Please enter your age.' })
-      .int('Please enter your age in whole years.')
-      .min(event.minAge, `Participants must be at least ${event.minAge} years old on Race Day.`)
-      .max(100, 'Please enter a valid age.'),
+    dateOfBirth: z
+      .string({ invalid_type_error: 'Please enter your date of birth.' })
+      .refine(isValidDate, 'Please enter your date of birth.')
+      .refine((dob) => !(ageOnRaceDay(dob) < event.minAge), `Participants must be at least ${event.minAge} years old on ${ageDeadline}.`)
+      .refine((dob) => !(ageOnRaceDay(dob) > 100), 'Please check your date of birth.'),
     gender: z.string().min(1, 'Please select a gender.').max(20),
     bloodGroup: optionalText,
     occupation: optionalText,
@@ -39,7 +42,7 @@ export const registrationSchema = z
     if (data.occupation === 'Other' && !data.occupationOther) {
       ctx.addIssue({ code: 'custom', path: ['occupationOther'], message: 'Please tell us your occupation.' });
     }
-    if (data.age < 18) {
+    if (ageOnRaceDay(data.dateOfBirth) < 18) {
       if (!data.guardianName || data.guardianName.length < 2) {
         ctx.addIssue({ code: 'custom', path: ['guardianName'], message: 'Participants under 18 need a parent or guardian.' });
       }

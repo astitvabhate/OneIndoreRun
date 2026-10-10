@@ -165,3 +165,5 @@
 .regNumber span { font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; }
 .regNumber b { font: 800 clamp(2.2rem, 5vw, 3.2rem)/1 var(--display); letter-spacing: -.03em; }
 .regNumber small { font: 600 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.fieldHint { display: block; margin-top: 6px; color: #5f655f; font: 500 13px var(--display); letter-spacing: 0; text-transform: none; }
+.formFields input[type='date'] { cursor: pointer; }

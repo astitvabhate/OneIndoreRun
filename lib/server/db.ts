@@ -43,7 +43,7 @@ const toColumns = (input: RegistrationInput, amount: number) => ({
   city: input.city,
   address: input.address,
   pincode: input.pincode,
-  age: input.age,
+  date_of_birth: input.dateOfBirth,
   gender: input.gender,
   blood_group: input.bloodGroup || null,
   occupation: input.occupation === 'Other' ? input.occupationOther || 'Other' : input.occupation || null,

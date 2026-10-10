@@ -14,12 +14,17 @@ const races: Race[] = [
 
 const fee = 200;
 
+// Race day as 'YYYY-MM-DD' once it is fixed. Until then, ages are checked against the first
+// expo day, which is never later than race day, so nobody under the minimum age slips through.
+const raceDate = null as string | null;
+const expoStartDate = '2026-11-27';
+
 export const formatFee = (amount = fee) => `₹${amount}`;
 
 export const event = {
   name: 'ONE INDORE RUN',
   edition: 'INDORE 2.0',
-  raceDay: null as string | null,
+  raceDate,
   fee,
   minAge: 12,
   expoDates: '27 & 28 November 2026',
@@ -40,3 +45,29 @@ export const event = {
 };
 
 export const findRace = (slug: string | undefined) => races.find((race) => race.slug === slug);
+
+/** The date runners' ages are measured on: race day if announced, otherwise the first expo day. */
+export const ageReferenceDate = () => raceDate ?? expoStartDate;
+
+const parseDate = (iso: string) => iso.split('-').map(Number) as [number, number, number];
+
+/** True for a real calendar date written as YYYY-MM-DD. */
+export function isValidDate(iso: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const [y, m, d] = parseDate(iso);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+}
+
+/** Whole years between a date of birth and another date (both YYYY-MM-DD). */
+export function ageOn(dateOfBirth: string, onDate: string) {
+  const [by, bm, bd] = parseDate(dateOfBirth);
+  const [y, m, d] = parseDate(onDate);
+  return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
+}
+
+/** Formats YYYY-MM-DD as e.g. "29 November 2026", independent of the viewer's time zone. */
+export function formatDate(iso: string) {
+  const [y, m, d] = parseDate(iso);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+}

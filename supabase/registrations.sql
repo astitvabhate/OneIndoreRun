@@ -1,5 +1,6 @@
 -- One Indore Run registrations.
 -- Run once in Supabase: Dashboard → SQL Editor → New query → paste → Run.
+-- Age is not stored: it is worked out from date_of_birth, because race day may still change.
 
 create table if not exists public.registrations (
   id uuid primary key default gen_random_uuid(),
@@ -14,7 +15,7 @@ create table if not exists public.registrations (
   city text not null,
   address text not null,
   pincode text not null,
-  age int not null check (age between 12 and 100),
+  date_of_birth date not null,
   gender text not null,
   blood_group text,
   occupation text,
@@ -49,7 +50,7 @@ create or replace view public.paid_registrations
 with (security_invoker = true) as
 select
   'OIR-' || lpad(reg_no::text, 5, '0') as registration_number,
-  first_name, middle_name, last_name, mobile, email, city, age, gender, blood_group,
+  first_name, middle_name, last_name, mobile, email, city, date_of_birth, gender, blood_group,
   category, tshirt_size, emergency_name, emergency_mobile, guardian_name, guardian_mobile,
   razorpay_payment_id, paid_at
 from public.registrations

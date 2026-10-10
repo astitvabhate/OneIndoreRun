@@ -162,3 +162,11 @@ where o.status = 'duplicate'
 order by o.created_at;
 
 commit;
+
+-- Result shown in the SQL Editor: both "can_call" columns must be false.
+select
+  has_function_privilege('anon', 'public.save_pending_registration(jsonb)', 'execute') as anon_can_call_save,
+  has_function_privilege('anon', 'public.mark_order_paid(text, text)', 'execute') as anon_can_call_mark_paid,
+  (select count(*) from public.registrations) as registrations,
+  (select count(*) from public.payment_orders) as payment_orders,
+  (select string_agg('OIR-' || lpad(reg_no::text, 5, '0'), ', ' order by reg_no) from public.registrations where status = 'paid') as paid_numbers;

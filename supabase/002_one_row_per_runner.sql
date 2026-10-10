@@ -1,7 +1,7 @@
 -- Upgrade: one row per runner per race, and registration numbers only for paid runners.
 -- For databases set up with the first version of registrations.sql.
--- Run once in Supabase: SQL Editor → New query → paste → Run. Runs as one transaction:
--- if any step fails, nothing is changed.
+-- Run in Supabase: SQL Editor → New query → paste → Run. Runs as one transaction (if any
+-- step fails, nothing is changed), and every step is safe to run again.
 
 begin;
 
@@ -19,31 +19,36 @@ create index if not exists payment_orders_registration on public.payment_orders 
 alter table public.payment_orders enable row level security;
 
 -- 2. Group existing rows by runner (mobile + race + date of birth + first name). The paid row,
---    or else the newest, is kept; the others' orders are re-pointed to it.
-create temp table runner_groups on commit drop as
-select id, status,
-  first_value(id) over (
-    partition by mobile, category, date_of_birth, lower(first_name)
-    order by (status = 'paid') desc, created_at desc
-  ) as keeper
-from public.registrations;
-
+--    or else the newest, is kept ("keeper"); the others' orders are re-pointed to it.
+--    (The grouping is repeated in each statement: the SQL Editor doesn't keep temp tables.)
 insert into public.payment_orders (order_id, registration_id, amount, status, payment_id, created_at)
 select r.razorpay_order_id, g.keeper, r.amount,
   case when r.status = 'paid' then 'paid' else 'created' end,
   r.razorpay_payment_id, r.created_at
 from public.registrations r
-join runner_groups g on g.id = r.id
+join (
+  select id, first_value(id) over (
+    partition by mobile, category, date_of_birth, lower(first_name)
+    order by (status = 'paid') desc, created_at desc
+  ) as keeper
+  from public.registrations
+) g on g.id = r.id
 where r.razorpay_order_id is not null
 on conflict (order_id) do nothing;
 
 -- Only unpaid duplicates are removed. If one runner somehow has two paid rows, the unique
--- index below fails and the whole upgrade rolls back, so no paid record is ever deleted.
+-- index below fails and the upgrade stops there, so no paid record is ever deleted.
 delete from public.registrations r
-using runner_groups g
+using (
+  select id, first_value(id) over (
+    partition by mobile, category, date_of_birth, lower(first_name)
+    order by (status = 'paid') desc, created_at desc
+  ) as keeper
+  from public.registrations
+) g
 where g.id = r.id and g.id <> g.keeper and r.status <> 'paid';
 
-create unique index registrations_one_per_runner
+create unique index if not exists registrations_one_per_runner
   on public.registrations (mobile, category, date_of_birth, lower(first_name));
 
 -- 3. Registration numbers come from a sequence and are handed out only on payment.

@@ -1,23 +1,23 @@
 import Image from 'next/image';
 import { photos } from './content';
+import { GalleryScroller } from './GalleryScroller';
 
-// Additional photos flow into the grid after the featured six-tile composition.
 const galleryPhotos = photos.slice(4);
 
 export function GallerySection() {
   return (
-    <section id="gallery" className="gallery galleryMosaic">
+    <section id="gallery" className="gallery">
       <div className="galleryHeading wrap">
         <p className="eyebrow dark">A city in motion</p>
         <h2>THE <em>ENERGY</em><br />OF SHOWING UP.</h2>
       </div>
-      <div className="mosaicGrid">
+      <GalleryScroller>
         {galleryPhotos.map((photo, index) => (
-          <figure className="mosaicCard" key={photo}>
-            <Image src={photo} width={1000} height={800} alt={`One Indore Run event moment ${index + 1}`} loading="lazy" />
+          <figure className="galleryCard" key={photo}>
+            <Image src={photo} width={1000} height={800} sizes="(max-width: 750px) 82vw, 36vw" alt={`One Indore Run event moment ${index + 1}`} />
           </figure>
         ))}
-      </div>
+      </GalleryScroller>
     </section>
   );
 }

@@ -1,116 +1,158 @@
 /* Registration page: local layout and responsive rules. */
-.reg {
-  min-height: 100vh;
-  max-width: 100%;
-  overflow-x: clip;
-  background: #f2f0e9;
-}
+.reg { min-height: 100vh; background: var(--paper); }
 
-.regNav {
-  display: flex;
-  height: 74px;
-  min-width: 0;
-  padding: 0 max(24px, 7vw);
-  align-items: center;
-  justify-content: space-between;
-  background: var(--ink);
-  color: #fff;
-}
+.regNav { display: flex; height: 74px; padding: 0 max(24px, 7vw); align-items: center; justify-content: space-between; background: var(--ink); color: #fff; }
+.regNav .logo { width: 130px; height: 60px; }
+.back { display: flex; align-items: center; gap: 8px; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.back:hover { color: var(--lime); }
 
-.back { display: flex; align-items: center; gap: 8px; font: 500 10px 'DM Mono'; text-transform: uppercase; white-space: nowrap; }
+.regHero { padding: 80px var(--gutter) 65px; overflow: hidden; background: var(--sage); }
+.regHero h1 { margin: 15px 0; font-size: clamp(4rem, 9vw, 9rem); line-height: .9; letter-spacing: -.06em; }
+.regHero > p:last-child { font-size: 16px; }
 
-.regHero { padding: 80px max(24px, 8vw) 65px; overflow: hidden; background: #d8e2d4; }
-.regHero h1 { margin: 15px 0; font-size: clamp(5rem, 10vw, 10rem); }
-.regHero > p:last-child { font-size: 15px; }
-
+/* Step strip stays visible while scrolling through the form. */
 .progress {
+  position: sticky;
+  z-index: 10;
+  top: 0;
   display: flex;
-  width: 100%;
-  padding: 22px 8vw;
+  padding: 18px var(--gutter);
   gap: 10px;
   justify-content: space-between;
   border-bottom: 1px solid #d5d7d1;
-  background: #fff;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(8px);
 }
-
-.progress span { display: flex; align-items: center; gap: 6px; color: #777d77; font: 500 10px 'DM Mono'; text-transform: uppercase; }
-.progress b { color: var(--orange); }
+.progress a, .progress span { display: flex; align-items: center; gap: 7px; color: #6b716b; font: 600 11px var(--ui); letter-spacing: .05em; text-transform: uppercase; }
+.progress a[href]:hover { color: var(--ink); }
+.progress b { display: grid; min-width: 22px; height: 22px; place-items: center; color: var(--orange); }
+.progress .done b { border-radius: 50%; background: var(--ink); color: var(--lime); }
+.progress .current { color: var(--ink); }
+.progress .current b { border-radius: 50%; background: var(--orange); color: #fff; }
 
 .regLayout {
   display: grid;
-  width: 100%;
   max-width: 1300px;
-  min-width: 0;
   margin: auto;
-  padding: 90px max(24px, 8vw);
-  gap: clamp(42px, 9vw, 118px);
+  padding: 80px var(--gutter);
+  gap: clamp(42px, 8vw, 110px);
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
   align-items: start;
 }
 
-.formFields { min-width: 0; }
-.formFields section { margin-bottom: 65px; padding-bottom: 75px; border-bottom: 1px solid #c8cbc4; }
-.formFields h2 { margin: 17px 0 35px; font-size: clamp(3.5rem, 6vw, 6rem); }
+/* Form ---------------------------------------------------------------------- */
 
-.formGrid { display: grid; min-width: 0; gap: 22px 15px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.formFields, .review { min-width: 0; }
+.formFields section { margin-bottom: 60px; padding-bottom: 65px; border-bottom: 1px solid var(--line); scroll-margin-top: 80px; }
+.formFields h2, .review h2 { margin: 17px 0 32px; font-size: clamp(2.6rem, 5vw, 4.6rem); }
+
+.formGrid { display: grid; gap: 24px 18px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .formGrid .wide { grid-column: span 2; }
 
-.formFields label { display: block; min-width: 0; font: 600 10px 'DM Mono'; letter-spacing: .05em; text-transform: uppercase; }
-.formFields input, .formFields select { width: 100%; min-width: 0; height: 48px; margin-top: 8px; border: 0; border-bottom: 1px solid #9fa39d; border-radius: 0; outline: none; background: transparent; font: 500 15px Manrope; }
-.formFields small { display: block; margin-top: 5px; color: #c72e12; font: 500 10px Manrope; letter-spacing: 0; text-transform: none; }
+.formFields label { display: block; min-width: 0; color: #3d433e; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.formFields input:not([type='radio'], [type='checkbox']), .formFields select {
+  width: 100%;
+  height: 50px;
+  margin-top: 8px;
+  padding: 0 2px;
+  border-bottom: 1px solid #9fa39d;
+  outline: none;
+  color: var(--ink);
+  font: 500 16px var(--display);
+  letter-spacing: 0;
+  text-transform: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.formFields select { appearance: none; padding-right: 28px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23101613' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 4px center; cursor: pointer; }
+.formFields input:not([type='radio'], [type='checkbox']):hover, .formFields select:hover { border-color: var(--ink); }
+.formFields input:not([type='radio'], [type='checkbox']):focus, .formFields select:focus { border-color: var(--ink); box-shadow: 0 2px 0 var(--orange); }
+.formFields [aria-invalid='true'] { border-color: #c72e12 !important; }
 
-.choiceGrid { display: grid; gap: 9px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.choice { min-width: 0; cursor: pointer; }
+.fieldError { display: block; margin-top: 6px; color: #c72e12; font: 500 13px var(--display); letter-spacing: 0; text-transform: none; }
+
+.choiceGrid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.choice { position: relative; cursor: pointer; }
 .choice input, .sizes input { position: absolute; opacity: 0; }
-.choice span { display: flex; min-height: 110px; padding: 17px; border: 1px solid transparent; background: #e0e3db; flex-direction: column; justify-content: space-between; }
+.choice span { display: flex; min-height: 110px; padding: 18px; flex-direction: column; justify-content: space-between; border: 1px solid transparent; background: #e0e3db; transition: background-color .2s, border-color .2s; }
+.choice:hover span { border-color: #9fa39d; }
 .choice input:checked + span { border-color: var(--ink); background: var(--lime); }
-.choice b { font: 800 47px 'Barlow Condensed'; letter-spacing: -.04em; }
-.choice i { font: 500 10px 'DM Mono'; font-style: normal; }
+.choice b { font: 800 clamp(2rem, 3.4vw, 2.8rem) var(--display); letter-spacing: -.05em; text-transform: none; }
+.choice i { font: 600 11px var(--ui); font-style: normal; }
 
 .sizes { display: flex; flex-wrap: wrap; gap: 8px; }
-.sizes label span { display: grid; width: 57px; height: 52px; place-items: center; background: #e0e3db; font: 700 17px 'Barlow Condensed'; }
+.sizes label { position: relative; cursor: pointer; }
+.sizes label span { display: grid; width: 60px; height: 54px; place-items: center; border: 1px solid transparent; background: #e0e3db; font: 700 16px var(--display); letter-spacing: 0; transition: background-color .2s, border-color .2s; }
+.sizes label:hover span { border-color: #9fa39d; }
 .sizes input:checked + span { background: var(--orange); color: #fff; }
 
-.formIntro { margin: -20px 0 25px; color: #747a74; font-size: 13px; }
-.consents { display: grid; gap: 15px; }
-.consents label { display: flex; align-items: flex-start; gap: 12px; font: 500 12px Manrope; letter-spacing: 0; line-height: 1.55; text-transform: none; }
-.consents input { width: 18px; min-width: 18px; height: 18px; margin: 0; accent-color: var(--orange); }
+.choice input:focus-visible + span, .sizes input:focus-visible + span { outline: 2px solid var(--orange); outline-offset: 3px; }
 
-.summary { position: sticky; top: 25px; min-width: 0; padding: 28px; background: #101613; color: #f1f3ec; box-shadow: 0 14px 34px rgba(16, 22, 19, .12); }
+.formIntro { margin: -16px 0 26px; color: #5f655f; font-size: 15px; }
+
+.guardian { margin-top: 34px; padding: 24px; border-left: 3px solid var(--orange); background: #fff; }
+.guardianNote { display: flex; margin-bottom: 20px; gap: 10px; font-size: 14px; line-height: 1.5; }
+.guardianNote svg { flex: none; margin-top: 2px; color: var(--orange); }
+
+.consents { display: grid; gap: 16px; }
+.consents label { display: flex; padding: 16px; align-items: flex-start; gap: 14px; border: 1px solid transparent; background: #fff; color: var(--ink); font: 500 14px/1.55 var(--display); letter-spacing: 0; text-transform: none; cursor: pointer; }
+.consents label.invalid { border-color: #c72e12; }
+.consents input { width: 20px; min-width: 20px; height: 20px; margin-top: 1px; accent-color: var(--orange); }
+
+.formSubmit { width: 100%; min-height: 60px; font-size: 13px; }
+
+/* Review and notice ----------------------------------------------------------- */
+
+.review dl { border-top: 1px solid var(--line); }
+.review dl div { display: grid; padding: 15px 0; gap: 20px; grid-template-columns: 180px 1fr; border-bottom: 1px solid var(--line); }
+.review dt { color: #6b716b; font: 600 11px/1.9 var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.review dd { font-size: 16px; overflow-wrap: anywhere; }
+.reviewActions { display: flex; margin-top: 36px; flex-wrap: wrap; gap: 12px; }
+.reviewActions .button { flex: 1; min-width: 220px; min-height: 58px; }
+.button.outline { background: transparent; box-shadow: inset 0 0 0 1px var(--ink); }
+.button.outline:hover { background: var(--ink); color: #fff; }
+.button:disabled { cursor: wait; opacity: .6; transform: none; }
+
+.notice > p:not(.eyebrow) { max-width: 560px; margin-bottom: 14px; font-size: 17px; line-height: 1.6; }
+
+/* Summary --------------------------------------------------------------------- */
+
+.summary { position: sticky; top: 90px; min-width: 0; padding: 28px; background: var(--ink); color: #f1f3ec; box-shadow: 0 14px 34px rgba(16, 22, 19, .12); }
 .summary .eyebrow { color: #afb5ad; }
-.summary h3 { margin: 17px 0 27px; font: 800 45px 'Barlow Condensed'; }
-.summary > div { display: flex; min-width: 0; margin: 10px 0; gap: 16px; justify-content: space-between; font-size: 12px; }
+.summary h3 { margin: 17px 0 27px; font-size: 2.4rem; font-weight: 800; letter-spacing: -.05em; }
+.summary > div { display: flex; margin: 10px 0; gap: 16px; justify-content: space-between; font-size: 14px; }
 .summary > div span { color: #a5aba5; }
 .summary > div b { overflow-wrap: anywhere; text-align: right; }
-.summary hr { margin: 25px 0; border: 0; border-top: 1px solid #ffffff2a; }
-.summaryTitle { margin: 25px 0 12px; color: var(--lime); font: 500 9px 'DM Mono'; letter-spacing: .12em; }
-.summary .tick { display: flex; align-items: center; gap: 7px; font-size: 11px; line-height: 1.8; }
-.tick svg { flex: 0 0 auto; color: var(--lime); }
-.payment { width: 100%; margin-top: 27px; }
-.pending { display: flex; gap: 5px; margin-top: 11px; color: #b2b8b0; font-size: 9px; line-height: 1.5; }
-.pending svg { min-width: 14px; }
+.summary hr { margin: 25px 0; border-top: 1px solid var(--line-dark); }
+.summaryTitle { margin: 25px 0 12px; color: var(--lime); font: 600 10px var(--ui); letter-spacing: .12em; }
+.summary .tick { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.85; }
+.tick svg { flex: none; color: var(--lime); }
+.pending { display: flex; margin-top: 22px; gap: 7px; color: #b2b8b0; font-size: 12px; line-height: 1.5; }
+.pending svg { flex: none; margin-top: 2px; }
 
-/* The summary moves above the form on tablet and the progress steps wrap. */
+/* Responsive ------------------------------------------------------------------ */
+
+/* The summary moves above the form on tablet and the step strip scrolls sideways. */
 @media (max-width: 850px) {
-  .regLayout { padding-top: 58px; grid-template-columns: minmax(0, 1fr); }
+  .regLayout { padding-top: 50px; grid-template-columns: minmax(0, 1fr); }
   .summary { position: static; grid-row: 1; }
-  .formFields { grid-row: 2; }
-  .progress { flex-wrap: wrap; justify-content: flex-start; row-gap: 14px; }
-  .progress span { flex: 0 0 calc(33.333% - 7px); white-space: nowrap; }
+  .summary .summaryTitle, .summary .tick, .summary hr { display: none; }
+  .progress { overflow-x: auto; gap: 22px; scrollbar-width: none; }
+  .progress a, .progress span { flex: none; }
 }
 
 @media (max-width: 500px) {
   .regNav { padding-inline: 20px; }
-  .regNav .logo { width: 112px; }
-  .back { font-size: 9px; }
-  .regHero { padding-top: 55px; }
-  .regLayout { padding-top: 45px; }
-  .progress { padding-inline: 24px; }
-  .progress span { flex-basis: calc(50% - 5px); }
+  .regNav .logo { width: 112px; height: 52px; }
+  .regHero { padding-top: 55px; padding-bottom: 48px; }
+  .regLayout { padding-top: 36px; }
+  .progress { padding-inline: 20px; }
   .formGrid, .choiceGrid { grid-template-columns: minmax(0, 1fr); }
   .formGrid .wide { grid-column: auto; }
-  .choice span { min-height: 75px; align-items: center; flex-direction: row; }
-  .formFields section { margin-bottom: 45px; padding-bottom: 50px; }
-  .formFields h2 { margin-bottom: 26px; }
+  .choice span { min-height: 72px; flex-direction: row; align-items: center; }
+  .formFields section { margin-bottom: 44px; padding-bottom: 48px; }
+  .formFields h2, .review h2 { margin-bottom: 26px; }
   .summary { padding: 22px; }
+  .guardian { padding: 18px; }
+  .review dl div { gap: 4px; grid-template-columns: 1fr; }
+  .reviewActions .button { min-width: 0; flex-basis: 100%; }
 }

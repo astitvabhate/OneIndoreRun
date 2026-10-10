@@ -1,4 +1,12 @@
+import type { Metadata } from 'next';
 import { Registration } from '../../components/Registration';
+import { findRace } from '../../lib/eventData';
 import './register.css';
-import { Suspense } from 'react';
-export default function RegisterPage(){return <Suspense fallback={<main className="reg"/>}><Registration/></Suspense>}
+
+export const metadata: Metadata = { title: 'Register | One Indore Run' };
+
+// Reading the category on the server means the full form is in the first HTML response.
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
+  const { category } = await searchParams;
+  return <Registration initialCategory={findRace(category)?.slug} />;
+}

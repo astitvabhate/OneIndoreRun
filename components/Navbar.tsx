@@ -1,0 +1,4 @@
+'use client';
+import { Menu, X, ArrowUpRight } from 'lucide-react'; import Link from 'next/link'; import { useState } from 'react'; import { Logo } from './Logo';
+const links=['About','Races','Experience','Route','Gallery','FAQ'];
+export function Navbar(){const [open,setOpen]=useState(false); return <header className="nav"><Logo/><nav>{links.map(x=><a key={x} href={'#'+x.toLowerCase()}>{x}</a>)}</nav><Link className="button small" href="/register">Register <ArrowUpRight size={15}/></Link><button className="menu" onClick={()=>setOpen(!open)} aria-label="Toggle menu">{open?<X/>:<Menu/>}</button>{open&&<div className="mobileNav">{links.map(x=><a key={x} onClick={()=>setOpen(false)} href={'#'+x.toLowerCase()}>{x}</a>)}<Link className="button" href="/register">Register now</Link></div>}</header>}

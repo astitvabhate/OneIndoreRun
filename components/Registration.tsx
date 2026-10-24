@@ -7,13 +7,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Check, Download, Info, PartyPopper, PencilLine, ShieldCheck, Ticket } from 'lucide-react';
 import { Logo } from './Logo';
 import { ageReferenceDate, event, findRace, formatDate, formatFee, type RaceSlug } from '../lib/eventData';
-import { openCheckout, type CheckoutOrder } from '../lib/payment';
+import { openCheckout, postJson, verifyPayment, type CheckoutOrder, type VerifiedPayment } from '../lib/payment';
 import { ageOnRaceDay, registrationSchema, type RegistrationInput } from '../lib/registrationSchema';
 
 type Form = RegistrationInput;
 type Field = keyof Form;
 type Stage = 'form' | 'review' | 'notOpen' | 'done';
-type Confirmation = { ticketId: string; regNo: string; race?: string; duplicatePayment?: boolean };
+type Confirmation = VerifiedPayment;
 type CheckoutError = { message: string; ticketId?: string };
 
 const steps = [
@@ -56,9 +56,9 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
     setCheckoutError(undefined);
     try {
       const values = getValues();
-      const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
+      const response = await postJson('/api/register', values);
       const body = await response.json().catch(() => ({}));
-      if (response.status === 503) return goTo('notOpen');
+      if (body.error === 'not_open') return goTo('notOpen');
       if (!response.ok) return setPaymentError(body.message ?? 'We could not start your registration. Please try again in a moment.', body.ticketId);
 
       const name = [values.firstName, values.lastName].join(' ');
@@ -66,11 +66,12 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
       if (result.status === 'dismissed') return setPaymentError('Payment was cancelled. Your spot is not confirmed until you pay.');
       if (result.status === 'failed') return setPaymentError(`${result.reason} No money was taken; please try again.`);
 
-      const verified = await fetch('/api/register/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(result.response) });
-      if (!verified.ok) {
-        return setPaymentError(`Your payment went through (ID ${result.response.razorpay_payment_id}) but we could not confirm it here. Please don't pay again; keep this ID and contact the organisers.`);
+      const verified = await verifyPayment(result.response);
+      if (verified.status === 'rejected') return setPaymentError(verified.message);
+      if (verified.status === 'unconfirmed') {
+        return setPaymentError(`Your payment went through (ID ${result.response.razorpay_payment_id}) but we could not confirm it here yet. Please don't pay again: in a few minutes, use "Find my ticket" with your mobile number and date of birth. Keep this ID in case you need to contact the organisers.`);
       }
-      setConfirmation(await verified.json());
+      setConfirmation(verified.payment);
       goTo('done');
     } catch {
       setPaymentError('Something went wrong. Please check your connection and try again.');
@@ -90,6 +91,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
         <p className="eyebrow dark">One Indore Run · Indore 2.0</p>
         <h1>SECURE YOUR<br /><em>SPOT.</em></h1>
         <p>Choose your run. Show up. Run Indore.</p>
+        <p className="findTicketLink">Already registered? <Link href="/ticket/find">Find your ticket</Link></p>
       </section>
 
       <nav className="progress" aria-label="Registration steps">

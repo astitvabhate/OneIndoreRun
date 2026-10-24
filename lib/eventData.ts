@@ -19,12 +19,17 @@ const fee = 200;
 const raceDate = null as string | null;
 const expoStartDate = '2026-11-27';
 
+// When online registration closes, with the India time zone, e.g. '2026-11-20T23:59:00+05:30'.
+// Null keeps it open. Payments already in progress are still confirmed after this.
+const registrationClosesAt = null as string | null;
+
 export const formatFee = (amount = fee) => `₹${amount}`;
 
 export const event = {
   name: 'ONE INDORE RUN',
   edition: 'INDORE 2.0',
   raceDate,
+  registrationClosesAt,
   fee,
   minAge: 12,
   expoDates: '27 & 28 November 2026',

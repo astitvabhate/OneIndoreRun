@@ -118,7 +118,7 @@ export async function renderTicketPdf(ticket: TicketRow, url: string) {
   // Details: two columns, three rows
   const details: [string, string][] = [
     ['T-shirt size', ticket.tshirt_size],
-    ['Entry fee', `INR ${ticket.amount / 100} - PAID`],
+    ['Entry fee', `INR ${ticket.amount! / 100} - PAID`],
     ['Kit collection (Expo)', event.expoDates],
     ['Race day', raceDayLabel()],
     ['Payment ID', ticket.razorpay_payment_id ?? '—'],

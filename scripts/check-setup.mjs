@@ -33,15 +33,18 @@ if (!supabaseUrl || !serviceKey) {
   try {
     const table = await query('registrations?select=id&limit=1');
     if (table.response.ok) {
-      ok(`connected; "registrations" table found (${table.response.headers.get('content-range')?.split('/')[1] ?? 0} rows)`);
-      const view = await query('paid_registrations?select=registration_number&limit=1');
-      view.response.ok ? ok('"paid_registrations" view found') : fail('"paid_registrations" view missing', 'Run supabase/registrations.sql in the SQL Editor.');
-      const dob = await query('registrations?select=date_of_birth&limit=1');
-      if (!dob.response.ok) fail('table has no date_of_birth column (older version of the SQL)', 'Ask Claude for the upgrade script.');
+      ok(`connected; ${table.response.headers.get('content-range')?.split('/')[1] ?? 0} registrations`);
+      const missing = [];
+      for (const name of ['races', 'runners', 'payments', 'kit_collections', 'audit_log', 'rate_limits', 'registration_details']) {
+        if (!(await query(`${name}?limit=1`)).response.ok) missing.push(name);
+      }
+      missing.length
+        ? fail(`missing: ${missing.join(', ')} (older database layout)`, 'Rebuild: run supabase/drop_everything.sql, then supabase/schema.sql.')
+        : ok('all tables and the registration_details view found');
     } else if (table.response.status === 401) {
       fail('Supabase rejected the key', 'Copy the service_role secret again from Project Settings → API.');
     } else if (table.body.includes('PGRST205') || table.body.includes('does not exist') || table.response.status === 404) {
-      fail('connected, but the "registrations" table does not exist yet', 'Open SQL Editor, paste supabase/registrations.sql and click Run.');
+      fail('connected, but the database is empty', 'Open SQL Editor, paste supabase/schema.sql and click Run.');
     } else {
       fail(`unexpected response ${table.response.status}: ${table.body.slice(0, 200)}`);
     }

@@ -159,3 +159,48 @@
   .adminBarActions { gap: 2px; }
   .adminBarActions .adminIconLink { padding: 10px; }
 }
+
+/* Camera QR scanner on the check-in page */
+.qrScanner { display: grid; flex: 1 1 100%; gap: 12px; }
+.qrStart { width: 100%; min-height: 64px; font-size: 16px; }
+.qrViewport { position: relative; overflow: hidden; width: 100%; max-width: 480px; margin: 0 auto; aspect-ratio: 1; background: var(--ink); }
+.qrViewport.hidden { display: none; }
+.qrViewport video { width: 100%; height: 100%; object-fit: cover; }
+.qrFrame { position: absolute; inset: 18%; border: 3px solid var(--lime); box-shadow: 0 0 0 100vmax rgba(16, 22, 19, .45); }
+.qrStatus { position: absolute; right: 0; bottom: 0; left: 0; padding: 12px; color: #fff; font: 600 13px var(--ui); text-align: center; }
+.qrClose { position: absolute; top: 10px; right: 10px; display: grid; width: 40px; height: 40px; place-items: center; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .55); color: #fff; cursor: pointer; }
+.qrMessage { margin: 0; }
+.qrViewport video.mirrored { transform: scaleX(-1); }
+.qrCamera { display: flex; max-width: 480px; width: 100%; margin: 0 auto; align-items: center; gap: 10px; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.qrCamera select { height: 40px; min-width: 0; flex: 1; padding: 0 10px; border: 1px solid #b9bdb6; background: #fff; font: 500 14px var(--display); letter-spacing: 0; text-transform: none; }
+@media (min-width: 760px) {
+  .qrStart { justify-self: start; width: auto; min-height: 52px; padding-inline: 28px; }
+}
+
+/* Activity log */
+.historyReason { color: #3d433e; font-weight: 500 !important; }
+.historyChanges { display: grid; gap: 2px; margin: 2px 0; font-size: 13px; }
+.historyChanges b { font-weight: 600; }
+.historyChanges del { color: #8f1f0a; }
+.historyChanges ins { color: #1f7a3a; text-decoration: none; font-weight: 600; }
+.activityTable td { vertical-align: top; }
+.activityTable .historyChanges { min-width: 220px; }
+.activityTitle { font-size: 1.5rem; letter-spacing: -.02em; }
+.activityDay { height: 44px; padding: 0 10px; border: 1px solid #b9bdb6; background: #fff; font: 500 14px var(--display); }
+
+/* Kit check-in for one runner */
+.adminPage > .kitPanel { margin-top: 20px; }
+.kitPanel { display: flex; max-width: 640px; padding: 18px 20px; flex-wrap: wrap; align-items: center; gap: 14px; }
+.kitPanel > div { display: grid; flex: 1 1 220px; gap: 4px; }
+.kitPanel b { font: 800 18px var(--ui); letter-spacing: .04em; }
+.kitPanel span { font-size: 15px; line-height: 1.4; }
+.kitPanel.ready { background: #fff; border: 2px solid var(--ink); }
+.kitPanel.done { background: #1f7a3a; color: #fff; }
+.kitPanel.stop { background: #c72e12; color: #fff; }
+.kitPanel form { flex: 1 1 100%; }
+.kitButton { width: 100%; min-height: 64px; font-size: 15px; }
+.kitPanel > .kitButton { flex: 1 1 100%; }
+.kitEdit { display: inline-flex; margin-top: 6px; align-items: center; gap: 6px; font: 600 12px var(--ui); text-decoration: underline; }
+.checkinRunner, .checkinNext { max-width: 640px; }
+.checkinRunner h1 { margin-top: 4px; font-size: 1.8rem; letter-spacing: -.03em; }
+.checkinNext { margin-top: 20px; }

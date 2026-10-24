@@ -11,6 +11,9 @@ export interface Staff {
   name: string;
 }
 
+/** How a staff member appears in the activity log and on kit check-ins, e.g. 'Ravi (volunteer)'. */
+export const staffLabel = (staff: Staff) => `${staff.name} (${staff.role})`;
+
 const cookieName = 'oir_staff';
 const sessionHours = 12;
 

@@ -3,13 +3,14 @@ import { Download, Pencil, RefreshCw, Search, Ticket } from 'lucide-react';
 import { event, formatFee } from '../../lib/eventData';
 import { ageOnRaceDay } from '../../lib/registrationSchema';
 import {
-  allRegistrations, applyFilters, formatDateTime, formatTime, fullName, raceLabel, readFilters, refundsDue, regNoLabel, summarise,
+  formatDateTime, formatTime, fullName, raceLabel, readFilters, refundsDue, registrationsPage, regNoLabel, summary,
   type AdminRegistration, type Filters,
 } from '../../lib/server/admin';
 import { requireAdmin } from '../../lib/server/adminAuth';
 import { StaffBar } from './StaffBar';
 
 const perPage = 50;
+const refundReasons = { duplicate: 'Paid twice', cancelled: 'Registration cancelled', sold_out: 'Race sold out' };
 
 export default async function AdminDashboard({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const staff = await requireAdmin();
@@ -17,11 +18,8 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
   const filters = readFilters(params);
   const page = Math.max(1, Number(params.page) || 1);
 
-  const [rows, refunds] = await Promise.all([allRegistrations(), refundsDue()]);
-  const stats = summarise(rows);
-  const matches = applyFilters(rows, filters);
-  const pages = Math.max(1, Math.ceil(matches.length / perPage));
-  const shown = matches.slice((page - 1) * perPage, page * perPage);
+  const [stats, refunds, { rows: shown, total }] = await Promise.all([summary(), refundsDue(), registrationsPage(filters, page, perPage)]);
+  const pages = Math.max(1, Math.ceil(total / perPage));
   const query = (overrides: Partial<Filters> & { page?: number }) => {
     const next = new URLSearchParams();
     const merged = { ...filters, page, ...overrides };
@@ -42,7 +40,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         <Stat label="Confirmed runners" value={stats.paid} />
         <Stat label="Collected" value={`₹${stats.collected.toLocaleString('en-IN')}`} />
         <Stat label="Kits collected" value={`${stats.kits} / ${stats.paid}`} hint={stats.paid ? `${Math.round((stats.kits / stats.paid) * 100)}% done` : 'At the expo'} />
-        <Stat label="Started, not paid" value={stats.unpaid} hint="Opened checkout but haven't paid" />
+        <Stat label="Started, not paid" value={stats.unpaid} hint="Opened checkout, not paid. Removed after 7 days" />
         <Stat label="Under 18" value={stats.minors} hint="Paid runners needing a guardian" />
         <Stat label="Refunds due" value={refunds.length} tone={refunds.length ? 'alert' : undefined} hint={refunds.length ? 'See the list below' : 'None'} />
         {stats.cancelled > 0 && <Stat label="Cancelled" value={stats.cancelled} hint="Not counted above" />}
@@ -76,14 +74,15 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       {refunds.length > 0 && (
         <section className="adminPanel alert">
           <h2>Refunds due</h2>
-          <p className="adminHint">These runners paid twice. Refund the second payment in Razorpay: Dashboard → Transactions → Payments → search the payment ID → Issue refund.</p>
+          <p className="adminHint">Money that can&apos;t count towards a place. Refund it in Razorpay: Dashboard → Transactions → Payments → search the payment ID → Issue refund. Once the refund is processed it disappears from this list.</p>
           <div className="adminTableWrap">
             <table className="adminTable">
-              <thead><tr><th>Payment ID</th><th>Reg. no.</th><th>Runner</th><th>Mobile</th><th>Amount</th><th>Paid at</th></tr></thead>
+              <thead><tr><th>Payment ID</th><th>Why</th><th>Reg. no.</th><th>Runner</th><th>Mobile</th><th>Amount</th><th>Paid at</th></tr></thead>
               <tbody>
                 {refunds.map((refund) => (
                   <tr key={refund.payment_id}>
                     <td><code>{refund.payment_id}</code></td>
+                    <td>{refundReasons[refund.reason]}</td>
                     <td>{refund.registration_number}</td>
                     <td>{refund.first_name} {refund.last_name}</td>
                     <td>{refund.mobile}</td>
@@ -101,7 +100,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         <div className="adminPanelHead">
           <h2>Registrations</h2>
           <Link href={`/admin${query({})}`} className="adminIconLink dark"><RefreshCw size={15} /> Refresh</Link>
-          <a className="button small" href={`/admin/export${query({ page: 1 })}`}><Download size={15} /> Download CSV ({matches.length})</a>
+          <a className="button small" href={`/admin/export${query({ page: 1 })}`}><Download size={15} /> Download CSV ({total.toLocaleString('en-IN')})</a>
         </div>
 
         <form className="adminFilters" method="get">
@@ -128,7 +127,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
           {(filters.q || filters.race || filters.kit || filters.status !== 'paid') && <Link href="/admin" className="adminClear">Clear</Link>}
         </form>
 
-        <p className="adminHint">{matches.length} {matches.length === 1 ? 'registration' : 'registrations'}{pages > 1 && ` · page ${page} of ${pages}`}. Tap a name for full details.</p>
+        <p className="adminHint">{total.toLocaleString('en-IN')} {total === 1 ? 'registration' : 'registrations'}{pages > 1 && ` · page ${page} of ${pages}`}. Tap a name for full details.</p>
 
         <div className="adminTableWrap">
           <table className="adminTable list">

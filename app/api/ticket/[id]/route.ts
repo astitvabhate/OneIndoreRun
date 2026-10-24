@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { formatRegNo } from '../../../../lib/registrationSchema';
-import { isRegistrationOpen } from '../../../../lib/server/config';
+import { isPaymentConfigured } from '../../../../lib/server/config';
 import { getTicket } from '../../../../lib/server/db';
 import { renderTicketPdf, siteOrigin, ticketUrl } from '../../../../lib/server/ticket';
 
 // Downloads the PDF ticket. Only paid registrations get one.
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!isRegistrationOpen()) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  if (!isPaymentConfigured()) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   try {
     const ticket = await getTicket(id);

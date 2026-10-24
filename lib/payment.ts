@@ -13,7 +13,14 @@ export interface CheckoutSuccess {
   razorpay_signature: string;
 }
 
-export type CheckoutResult = { status: 'paid'; response: CheckoutSuccess } | { status: 'dismissed' } | { status: 'failed'; reason: string };
+export interface VerifiedPayment {
+  ticketId: string;
+  regNo: string;
+  race?: string;
+  duplicatePayment?: boolean;
+}
+
+export type CheckoutResult ={ status: 'paid'; response: CheckoutSuccess } | { status: 'dismissed' } | { status: 'failed'; reason: string };
 
 interface RazorpayInstance {
   open(): void;
@@ -70,4 +77,38 @@ export async function openCheckout(order: CheckoutOrder, prefill: { name: string
     });
     checkout.open();
   });
+}
+
+/** POSTs JSON to our API, giving up after a timeout so the button never spins forever. */
+export function postJson(url: string, body: unknown, timeoutMs = 45_000) {
+  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
+}
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export type VerifyResult =
+  | { status: 'confirmed'; payment: VerifiedPayment }
+  | { status: 'rejected'; message: string } // e.g. refunded because the race sold out
+  | { status: 'unconfirmed' }; // couldn't reach a verdict; the webhook will record it
+
+/**
+ * Asks the server to confirm a payment. Confirming twice is harmless, so dropped connections and
+ * server hiccups are retried for about 15 seconds of waiting.
+ */
+export async function verifyPayment(payment: CheckoutSuccess): Promise<VerifyResult> {
+  for (const delay of [0, 1_000, 3_000, 5_000, 6_000]) {
+    await pause(delay);
+    try {
+      const response = await postJson('/api/register/verify', payment, 10_000);
+      if (response.ok) return { status: 'confirmed', payment: await response.json() };
+      if (response.status < 500) {
+        // Rejected outright; retrying won't help.
+        const body = await response.json().catch(() => ({}));
+        return body.message ? { status: 'rejected', message: body.message } : { status: 'unconfirmed' };
+      }
+    } catch {
+      // Network error or timeout: try again.
+    }
+  }
+  return { status: 'unconfirmed' };
 }

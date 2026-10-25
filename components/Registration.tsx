@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useForm, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Check, Download, Info, PartyPopper, PencilLine, ShieldCheck, Ticket } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Download, Info, LoaderCircle, PartyPopper, PencilLine, ShieldCheck } from 'lucide-react';
 import { Logo } from './Logo';
 import { ageReferenceDate, event, findRace, formatDate, formatFee, type RaceSlug } from '../lib/eventData';
 import { openCheckout, postJson, verifyPayment, type CheckoutOrder, type VerifiedPayment } from '../lib/payment';
@@ -15,6 +15,8 @@ type Field = keyof Form;
 type Stage = 'form' | 'review' | 'notOpen' | 'done';
 type Confirmation = VerifiedPayment;
 type CheckoutError = { message: string; ticketId?: string };
+/** What the full-screen loader says while checkout is busy outside the Razorpay window. */
+type Busy = 'starting' | 'confirming' | 'checking';
 
 const steps = [
   ['participant', 'Participant'],
@@ -36,6 +38,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
   const [checkoutError, setCheckoutError] = useState<CheckoutError>();
   const setPaymentError = (message: string, ticketId?: string) => setCheckoutError({ message, ticketId });
   const [confirmation, setConfirmation] = useState<Confirmation>();
+  const [busy, setBusy] = useState<Busy>();
   const { register, handleSubmit, control, getValues, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { category: initialCategory },
@@ -54,6 +57,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
   const confirm = async () => {
     setSubmitting(true);
     setCheckoutError(undefined);
+    setBusy('starting');
     try {
       const values = getValues();
       const response = await postJson('/api/register', values);
@@ -62,10 +66,17 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
       if (!response.ok) return setPaymentError(body.message ?? 'We could not start your registration. Please try again in a moment.', body.ticketId);
 
       const name = [values.firstName, values.lastName].join(' ');
+      setBusy(undefined); // Razorpay shows its own window from here
       const result = await openCheckout(body as CheckoutOrder, { name, email: values.email, contact: values.mobile });
-      if (result.status === 'dismissed') return setPaymentError('Payment was cancelled. Your spot is not confirmed until you pay.');
-      if (result.status === 'failed') return setPaymentError(`${result.reason} No money was taken; please try again.`);
+      if (result.status !== 'paid') {
+        // A short pause so the runner sees the window closed for a reason, not a sudden jump.
+        setBusy('checking');
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        if (result.status === 'dismissed') return setPaymentError('Payment was cancelled. Your spot is not confirmed until you pay.');
+        return setPaymentError(`${result.reason} No money was taken; please try again.`);
+      }
 
+      setBusy('confirming');
       const verified = await verifyPayment(result.response);
       if (verified.status === 'rejected') return setPaymentError(verified.message);
       if (verified.status === 'unconfirmed') {
@@ -77,6 +88,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
       setPaymentError('Something went wrong. Please check your connection and try again.');
     } finally {
       setSubmitting(false);
+      setBusy(undefined);
     }
   };
 
@@ -195,6 +207,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
 
         <Summary control={control} />
       </div>
+      {busy && <PaymentLoader busy={busy} />}
     </main>
   );
 }
@@ -300,6 +313,25 @@ function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form
   );
 }
 
+const loaderText: Record<Busy, [string, string]> = {
+  starting: ['Opening secure payment…', 'Saving your details and preparing the Razorpay window.'],
+  confirming: ['Confirming your payment…', "This can take up to 15 seconds. Please don't close or refresh this page, and don't pay again."],
+  checking: ['Checking payment status…', 'One moment while we see what happened.'],
+};
+
+function PaymentLoader({ busy }: { busy: Busy }) {
+  const [title, text] = loaderText[busy];
+  return (
+    <div className="paymentLoader" role="status" aria-live="polite">
+      <div>
+        <LoaderCircle size={42} className="spin" aria-hidden />
+        <b>{title}</b>
+        <p>{text}</p>
+      </div>
+    </div>
+  );
+}
+
 function NotOpen({ onEdit }: { onEdit: () => void }) {
   return (
     <section className="review notice" role="status">
@@ -331,9 +363,8 @@ function Done({ confirmation }: { confirmation: Confirmation }) {
       <p>Download your digital ticket now. Show its QR code with a photo ID at the Race Expo on <strong>{event.expoDates}</strong> to collect your kit and bib.</p>
       <div className="reviewActions">
         <a href={`/api/ticket/${confirmation.ticketId}`} className="button" download><Download size={17} /> Download ticket (PDF)</a>
-        <a href={`/ticket/${confirmation.ticketId}`} className="button outline" target="_blank" rel="noopener"><Ticket size={17} /> Open ticket page</a>
       </div>
-      <p className="ticketTip">Tip: bookmark the ticket page too. You can re-download the PDF from it any time.</p>
+      <p className="ticketTip">Lost it? Use &quot;Find my ticket&quot; with your mobile number and date of birth to download it again.</p>
     </section>
   );
 }

@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { adminEditSchema, cancelRunner, collectKit, recordSignIn, restoreRunner, undoKit, updateRunner } from '../../lib/server/admin';
+import { maxImportBytes, runImport, type ImportReport } from '../../lib/server/csvImport';
 import { endSession, requireAdmin, requireStaff, roleForPassword, staffLabel, startSession } from '../../lib/server/adminAuth';
 
 // Every action checks the caller's role itself: server actions can be called directly, not only from our buttons.
@@ -68,4 +69,27 @@ export async function restoreRegistration(formData: FormData) {
   const id = idFrom(formData);
   await restoreRunner(id, staffLabel(staff));
   redirect(`/admin/runner/${id}?saved=restored`);
+}
+
+export type ImportState = { report?: ImportReport; message?: string } | undefined;
+
+/** Checks an uploaded CSV of runners, or imports it as paid (offline) registrations. */
+export async function importRunners(_previous: ImportState, formData: FormData): Promise<ImportState> {
+  const staff = await requireAdmin();
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) return { message: 'Choose a CSV file first.' };
+  if (file.size > maxImportBytes) return { message: 'The file is larger than 2 MB. Please split it into smaller files.' };
+  if (!/\.(csv|txt)$/i.test(file.name)) return { message: 'Please upload a .csv file. In Excel or Google Sheets: File → Save as / Download → CSV.' };
+
+  const text = (field: string) => String(formData.get(field) ?? '').trim().slice(0, 300);
+  const feeInr = Number(formData.get('feeInr'));
+  if (!(feeInr >= 1 && feeInr <= 100_000)) return { message: 'Enter the fee collected per runner (at least ₹1).' };
+  if (formData.get('consent') !== 'on') return { message: 'Please confirm that consent has been collected for these runners.' };
+
+  const mode = formData.get('mode') === 'import' ? 'import' : 'check';
+  const result = await runImport(await file.text(), file.name, {
+    race: text('race'), tshirtSize: text('tshirtSize'), city: text('city'), address: text('address'), pincode: text('pincode'),
+    email: text('email'), contactName: text('contactName'), contactMobile: text('contactMobile'), note: text('note'), feeInr,
+  }, mode, staffLabel(staff));
+  return typeof result === 'string' ? { message: result } : { report: result };
 }

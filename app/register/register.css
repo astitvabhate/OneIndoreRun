@@ -177,3 +177,11 @@
 .paymentError a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .findTicketLink { margin-top: 14px; font-size: 14px; }
 .findTicketLink a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Full-screen loader while checkout talks to the server ------------------------ */
+
+.paymentLoader { position: fixed; z-index: 50; inset: 0; display: grid; padding: 16px; place-items: center; background: rgba(11, 16, 14, .78); backdrop-filter: blur(4px); }
+.paymentLoader > div { display: flex; width: min(100%, 420px); padding: 34px 28px; flex-direction: column; align-items: center; gap: 12px; background: #fff; color: var(--ink); text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, .35); }
+.paymentLoader svg { color: var(--ink); }
+.paymentLoader b { font: 800 22px/1.15 var(--display); letter-spacing: -.02em; text-transform: uppercase; }
+.paymentLoader p { color: #5f655f; font-size: 15px; line-height: 1.5; }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Menu, X } from 'lucide-react';
+import { ArrowUpRight, Menu, Ticket, X } from 'lucide-react';
 import { Logo } from './Logo';
 
 const links = [
@@ -39,13 +39,17 @@ export function Navbar() {
       <nav aria-label="Main">
         {links.map(([label, href]) => <a key={href} href={href}>{label}</a>)}
       </nav>
-      <Link className="button small" href="/register">Register <ArrowUpRight size={15} /></Link>
+      <div className="navActions">
+        <Link className="navTicket" href="/ticket/find"><Ticket size={15} /> Find ticket</Link>
+        <Link className="button small" href="/register">Register <ArrowUpRight size={15} /></Link>
+      </div>
       <button className="menu" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>
         {open ? <X /> : <Menu />}
       </button>
       {open && (
         <div className="mobileNav">
           {links.map(([label, href]) => <a key={href} href={href} onClick={() => setOpen(false)}>{label}</a>)}
+          <Link href="/ticket/find" onClick={() => setOpen(false)}>Find my ticket</Link>
           <Link className="button" href="/register">Register now <ArrowUpRight size={17} /></Link>
         </div>
       )}

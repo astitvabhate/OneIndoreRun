@@ -1,0 +1,39 @@
+import Link from 'next/link';
+import { ArrowLeft, Download } from 'lucide-react';
+import { event, formatFee } from '../../../lib/eventData';
+import { requireAdmin } from '../../../lib/server/adminAuth';
+import { maxImportRows, templateCsv } from '../../../lib/server/csvImport';
+import { StaffBar } from '../StaffBar';
+import { ImportForm } from './ImportForm';
+
+// A big school list takes a while to import: give the server action time to finish.
+export const maxDuration = 300;
+
+export default async function ImportPage() {
+  const staff = await requireAdmin();
+  return (
+    <main className="adminPage">
+      <StaffBar staff={staff} title="Import runners" />
+
+      <section className="adminPanel">
+        <Link href="/admin" className="adminIconLink dark"><ArrowLeft size={15} /> Dashboard</Link>
+        <h2>Import runners from a CSV</h2>
+        <p className="adminHint">
+          For group entries such as a school&apos;s students. Every valid row becomes a <b>paid</b> registration with its own OIR number and ticket,
+          recorded as paid offline (no Razorpay payment). Runners already registered for that race are skipped, so importing the same file twice is safe.
+          Up to {maxImportRows.toLocaleString('en-IN')} rows per file.
+        </p>
+        <ul className="importColumns">
+          <li><b>Required columns:</b> First name + Last name (or one Name column with the full name), Date of birth, Gender.</li>
+          <li><b>Optional columns:</b> Mobile, Email, Race, T-shirt, Guardian name, Guardian mobile, Emergency name, Emergency mobile, City, Address, Pincode, Blood group, Occupation. Other columns (class, roll no.) are ignored.</li>
+          <li>Dates can be 15/08/2012 (day first), 2012-08-15 or 15-Aug-2012. Race can be 3, 5 or 10 (or &quot;5 KM&quot;). Empty cells use the defaults below.</li>
+        </ul>
+        <a className="adminIconLink dark" download="one-indore-run-import-template.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(templateCsv)}`}>
+          <Download size={15} /> Download a sample CSV
+        </a>
+      </section>
+
+      <ImportForm races={event.races.map((race) => [race.slug, race.distance])} sizes={event.tshirtSizes} fee={event.fee} feeLabel={formatFee()} />
+    </main>
+  );
+}

@@ -84,6 +84,8 @@ em { color: var(--orange); font-style: italic; }
 /* Scroll-reveal and hero entrance. Motion is skipped for users who ask for less. */
 @keyframes riseIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @keyframes slideIn { from { transform: translateY(40px); } to { transform: none; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .9s linear infinite; }
 
 @media (prefers-reduced-motion: no-preference) {
   .reveal { opacity: 0; transform: translateY(25px); transition: opacity .6s ease, transform .6s ease; }
@@ -127,8 +129,11 @@ em { color: var(--orange); font-style: italic; }
 .nav nav a::after { position: absolute; right: 0; bottom: 0; left: 0; height: 2px; content: ''; background: var(--lime); transform: scaleX(0); transform-origin: left; transition: transform .25s; }
 .nav nav a:hover { opacity: 1; }
 .nav nav a:hover::after { transform: scaleX(1); }
-.nav > .button { min-width: 160px; min-height: 52px; }
-.nav.isSolid > .button { min-height: 44px; }
+.navActions { display: flex; align-items: center; gap: 22px; }
+.navActions .button { min-width: 160px; min-height: 52px; }
+.nav.isSolid .navActions .button { min-height: 44px; }
+.navTicket { display: inline-flex; align-items: center; gap: 7px; font: 600 12px var(--ui); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; opacity: .86; transition: opacity .2s, color .2s; }
+.navTicket:hover { opacity: 1; color: var(--lime); }
 
 .menu { display: none; padding: 8px; color: #fff; }
 .mobileNav { display: none; }
@@ -391,7 +396,7 @@ footer { padding: 76px var(--gutter) 28px; background: var(--ink-deep); color: #
   h2 { font-size: clamp(2.5rem, 11vw, 4rem); }
 
   .nav, .nav.isSolid { height: 72px; padding-inline: 22px; }
-  .nav nav, .nav > .button { display: none; }
+  .nav nav, .navActions { display: none; }
   .menu { display: block; }
   .logo, .nav.isSolid .logo { width: 123px; height: 58px; }
   .mobileNav {

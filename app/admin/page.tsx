@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Download, Pencil, RefreshCw, Search, Ticket } from 'lucide-react';
+import { Download, FileUp, Pencil, RefreshCw, Search, Ticket } from 'lucide-react';
 import { event, formatFee } from '../../lib/eventData';
 import { ageOnRaceDay } from '../../lib/registrationSchema';
 import {
@@ -100,6 +100,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         <div className="adminPanelHead">
           <h2>Registrations</h2>
           <Link href={`/admin${query({})}`} className="adminIconLink dark"><RefreshCw size={15} /> Refresh</Link>
+          <Link className="button small outline" href="/admin/import"><FileUp size={15} /> Import CSV</Link>
           <a className="button small" href={`/admin/export${query({ page: 1 })}`}><Download size={15} /> Download CSV ({total.toLocaleString('en-IN')})</a>
         </div>
 

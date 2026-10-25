@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { History, LayoutDashboard, LogOut, ScanLine } from 'lucide-react';
+import { FileUp, History, LayoutDashboard, LogOut, ScanLine } from 'lucide-react';
 import { Logo } from '../../components/Logo';
 import type { Staff } from '../../lib/server/adminAuth';
 import { logout } from './actions';
@@ -15,6 +15,7 @@ export function StaffBar({ staff, title }: { staff: Staff; title: string }) {
           <>
             <Link href="/admin" className="adminIconLink" aria-label="Dashboard"><LayoutDashboard size={18} /><span className="adminLinkText">Dashboard</span></Link>
             <Link href="/admin/activity" className="adminIconLink" aria-label="Activity log"><History size={18} /><span className="adminLinkText">Activity</span></Link>
+            <Link href="/admin/import" className="adminIconLink" aria-label="Import CSV"><FileUp size={18} /><span className="adminLinkText">Import</span></Link>
           </>
         )}
         <Link href="/admin/checkin" className="adminIconLink" aria-label="Check-in"><ScanLine size={18} /><span className="adminLinkText">Check-in</span></Link>

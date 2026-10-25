@@ -23,9 +23,9 @@ export function Home() {
         <HeroSection />
         <RaceDayBar />
         <AboutSection />
+        <KitSection />
         <WhyRunSection />
         <RaceSection />
-        <KitSection />
         <ExpoSection />
         <FinisherSection />
         <RouteSection />

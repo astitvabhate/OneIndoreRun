@@ -3,15 +3,63 @@
 .admin code, .admin .mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 13px; }
 
 /* Login */
-.adminLogin { display: grid; min-height: 100vh; padding: 24px; place-items: center; background: var(--ink); }
-.adminLoginCard { display: grid; width: min(380px, 100%); padding: 32px; gap: 18px; background: #fff; }
-.adminLoginCard .logo { width: 140px; height: 66px; }
-.adminLoginCard .logo img { filter: none; }
-.adminLoginCard h1 { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; letter-spacing: -.02em; }
-.adminLoginCard label { display: grid; gap: 8px; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
-.adminLoginCard input { height: 48px; padding: 0 12px; border: 1px solid #b9bdb6; font: 500 16px var(--display); letter-spacing: 0; text-transform: none; }
-.adminLoginCard input:focus { border-color: var(--ink); outline: 2px solid var(--lime); }
-.adminError { padding: 10px 12px; border-left: 3px solid #c72e12; background: #fdf0ec; color: #8f1f0a; line-height: 1.5; }
+.adminLogin { position: relative; display: grid; height: 100vh; height: 100svh; overflow: hidden; grid-template-columns: minmax(0, 1.15fr) minmax(400px, 1fr); background: #f4f3ee; }
+.adminLoginHero { position: relative; overflow: hidden; background: var(--ink); }
+.adminLoginHero img { object-fit: cover; filter: grayscale(.25) contrast(1.05); }
+.adminLoginHero::after { position: absolute; inset: 0; content: ''; background: linear-gradient(180deg, rgba(16, 22, 19, .25) 0%, rgba(16, 22, 19, .55) 55%, rgba(11, 16, 14, .92) 100%); }
+.adminLoginHeroText { position: absolute; z-index: 1; right: 48px; bottom: 48px; left: 48px; display: grid; max-width: 460px; gap: 14px; color: #fff; }
+.adminLoginHeroText span { justify-self: start; padding: 5px 10px; background: var(--lime); color: var(--ink); font: 700 11px var(--ui); letter-spacing: .1em; text-transform: uppercase; }
+.adminLoginHeroText p { font: 700 clamp(1.6rem, 2.6vw, 2.4rem)/1.08 var(--display); letter-spacing: -.035em; }
+
+/* The page is sized to the viewport; the pane only scrolls if a very short window can't fit the card. */
+.adminLoginPane { position: relative; z-index: 1; display: grid; min-height: 0; padding: 24px 24px 16px; overflow-y: auto; justify-items: center; align-items: center; }
+.adminLoginCard { display: grid; width: min(400px, 100%); padding: 32px 36px; gap: 16px; background: #fff; border-top: 4px solid var(--lime); box-shadow: 0 1px 2px rgba(16, 22, 19, .06), 0 18px 48px rgba(16, 22, 19, .1); }
+.adminLoginCard .logo { justify-self: center; width: 180px; height: 96px; }
+.adminLoginCard .logo img { filter: none; object-position: center; }
+.adminLoginCard header { display: grid; gap: 8px; padding-bottom: 4px; }
+.adminLoginEyebrow { display: inline-flex; align-items: center; gap: 6px; color: #5f655f; font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; }
+.adminLoginCard h1 { font-size: 2rem; letter-spacing: -.035em; }
+.adminLoginCard header p { color: #5f655f; font-size: 14px; line-height: 1.5; }
+.adminLoginCard label { display: grid; gap: 8px; color: #3d433e; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.adminLoginCard input { height: 48px; padding: 0 14px; border: 1px solid #c9ccc5; background: #fafaf7; color: var(--ink); font: 500 16px var(--display); letter-spacing: 0; text-transform: none; transition: border-color .15s, background .15s; }
+.adminLoginCard input::placeholder { color: #a3a8a1; }
+.adminLoginCard input:hover { border-color: #9fa39d; }
+.adminLoginCard input:focus { border-color: var(--ink); background: #fff; outline: 2px solid var(--lime); outline-offset: 0; }
+.adminLoginSubmit { width: 100%; gap: 8px; margin-top: 4px; }
+.adminLoginSubmit svg { transition: transform .2s; }
+.adminLoginSubmit:hover svg { transform: translateX(3px); }
+.adminLoginNote { display: flex; padding-top: 16px; gap: 8px; border-top: 1px solid #e3e5df; color: #6b716b; font-size: 12.5px; line-height: 1.5; }
+.adminLoginNote svg, .adminError svg { flex: none; margin-top: 2px; }
+.adminError { display: flex; padding: 10px 12px; gap: 8px; border-left: 3px solid #c72e12; background: #fdf0ec; color: #8f1f0a; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .adminLogin { grid-template-columns: 1fr; }
+  /* The photo becomes the dark band across the top, with the card overlapping it. */
+  .adminLoginHero { position: absolute; top: 0; right: 0; left: 0; height: 46svh; min-height: 230px; }
+  .adminLoginHero img { filter: none; object-position: center 40%; }
+  .adminLoginHero::after { background: linear-gradient(180deg, rgba(16, 22, 19, .05), rgba(11, 16, 14, .45)); }
+  .adminLoginHeroText { display: none; }
+  .adminLoginPane { padding-top: max(150px, 30svh); align-items: start; }
+}
+@media (max-width: 480px) {
+  .adminLoginPane { padding: max(140px, 28svh) 16px 12px; }
+  .adminLoginCard { padding: 24px 20px; gap: 14px; }
+  .adminLoginCard .logo { width: 160px; height: 84px; margin-bottom: 0; }
+  .adminLoginCard h1 { font-size: 1.6rem; }
+  .adminLoginCard input { height: 46px; }
+  .adminLoginNote { padding-top: 12px; }
+}
+/* Short screens (a laptop at 100% zoom): tighten everything so the card fits without scrolling. */
+@media (max-height: 760px) {
+  .adminLoginCard { padding: 24px 32px; gap: 12px; }
+  .adminLoginCard .logo { width: 140px; height: 72px; }
+  .adminLoginCard header { gap: 6px; padding-bottom: 0; }
+  .adminLoginCard header p { display: none; }
+  .adminLoginCard h1 { font-size: 1.6rem; }
+  .adminLoginCard input { height: 44px; }
+  .adminLoginSubmit { min-height: 46px; margin-top: 2px; }
+  .adminLoginNote { padding-top: 10px; }
+}
 
 /* Top bar */
 .adminBar { position: sticky; z-index: 5; top: 0; display: flex; padding: 0 24px; height: 64px; align-items: center; gap: 16px; background: var(--ink); color: #fff; }

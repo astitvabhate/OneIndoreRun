@@ -8,7 +8,7 @@ import { Logo } from './Logo';
 const links = [
   ['About', '#about'],
   ['Races', '#races'],
-  ['Experience', '#experience'],
+  ['Race kit', '#race-kit'],
   ['Route', '#route'],
   ['Gallery', '#gallery'],
   ['FAQ', '#faq'],

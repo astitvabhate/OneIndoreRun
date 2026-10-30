@@ -2,7 +2,7 @@ import { Logo } from '../Logo';
 
 const quickLinks = [
   ['Races', '/#races'],
-  ['Race kit', '/#experience'],
+  ['Race kit', '/#race-kit'],
   ['Route', '/#route'],
   ['FAQ', '/#faq'],
 ];

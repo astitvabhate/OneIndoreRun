@@ -22,7 +22,7 @@ export function ExpoSection() {
       <p className="expoNote">{event.races.map((race) => race.distance).join(' · ')} · Indore<br /><strong>Start times &amp; venue to be announced</strong></p>
       <p className="expoKit">
         <CalendarCheck size={16} />
-        <span>Kit collection is <strong>before</strong> race day, on {formatDateParts(kitStart, { day: 'numeric' })} &amp; {formatDateParts(kitEnd, { day: 'numeric', month: 'long' })} ({weekday(kitStart)} &amp; {weekday(kitEnd)}). <a href="#experience">What&apos;s in the kit</a></span>
+        <span>Kit collection is <strong>before</strong> race day, on {formatDateParts(kitStart, { day: 'numeric' })} &amp; {formatDateParts(kitEnd, { day: 'numeric', month: 'long' })} ({weekday(kitStart)} &amp; {weekday(kitEnd)}). <a href="#race-kit">What&apos;s in the kit</a></span>
       </p>
     </section>
   );

@@ -10,7 +10,7 @@ const weekday = (iso: string) => formatDateParts(iso, { weekday: 'short' });
 
 export function KitSection() {
   return (
-    <section id="experience" className="kit">
+    <section id="race-kit" className="kit">
       <div className="kitVisual">
         <Image src={photos[1]} fill sizes="(max-width: 750px) 100vw, 50vw" alt="Runner enjoying their run" />
         <div className="kitTag">{event.kit.length}<span>ESSENTIALS</span></div>

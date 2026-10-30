@@ -164,45 +164,15 @@ em { color: var(--orange); font-style: italic; }
 .heroActions { display: flex; flex-wrap: wrap; gap: 12px; }
 .heroActions .button { min-width: 190px; min-height: 58px; }
 
-/* Label-over-value columns that share the width, with the register button closing the row. */
-.racebar { display: flex; min-height: 104px; padding: 18px var(--gutter); align-items: center; gap: clamp(20px, 3vw, 48px); background: var(--lime); }
-.racebarItem { display: flex; flex: 1; flex-direction: column; gap: 6px; }
-.racebarMain { flex: 1.5; }
-.racebarItem + .racebarItem { padding-left: clamp(20px, 3vw, 48px); border-left: 1px solid rgba(16, 22, 19, .22); }
-.racebarItem span { font: 600 10px var(--ui); letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
-.racebarItem strong { font: 800 clamp(1.9rem, 2.6vw, 2.5rem)/1 var(--display); letter-spacing: -.03em; white-space: nowrap; }
-.racebarItem b { font: 800 1.35rem/1 var(--display); letter-spacing: -.02em; white-space: nowrap; }
-.racebarCta { display: flex; margin-left: auto; padding: 15px 20px; align-items: center; gap: 10px; background: var(--ink); color: var(--lime); font: 700 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; transition: transform .25s; }
-.racebarCta:hover { transform: translateY(-2px); }
-.racebarCtaNarrow { display: none; }
-
-/* Scratch-off cover over the whole race bar (see ScratchReveal). */
-@keyframes revealPop { 0% { transform: scale(.985); } 60% { transform: scale(1.01); } 100% { transform: none; } }
-.scratch { position: relative; overflow: hidden; }
-/* Dragging to scratch (including strokes that carry on past the reveal) would otherwise select the text underneath. */
-.scratch { user-select: none; -webkit-user-select: none; }
-/* Attention grabbers until the first scratch: a lime shine sweeping across and a hand miming the gesture. */
-@keyframes scratchShine { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-/* Zig-zags along a 45° line (bottom-left to top-right), then retraces back down. */
-@keyframes scratchHand {
-  0%, 100% { transform: translate(-16px, 8px) rotate(-18deg); }
-  12.5%, 87.5% { transform: translate(-1px, 11px) rotate(-10deg); }
-  25%, 75% { transform: translate(-4px, -4px) rotate(-18deg); }
-  37.5%, 62.5% { transform: translate(11px, -1px) rotate(-10deg); }
-  50% { transform: translate(8px, -16px) rotate(-18deg); }
-}
-.scratch.scratching:not(.touched)::after { position: absolute; z-index: 3; inset: 0; content: ''; background: linear-gradient(100deg, transparent 35%, rgba(217, 250, 53, .22) 50%, transparent 65%); pointer-events: none; animation: scratchShine 2.6s ease-in-out infinite; }
-.scratchHand { position: absolute; z-index: 3; top: calc(50% + 8px); left: 50%; margin-left: -11px; color: var(--lime); filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .6)); pointer-events: none; animation: scratchHand 2.2s linear infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .scratch.scratching:not(.touched)::after { display: none; }
-  .scratchHand { animation: none; }
-}
-.scratch canvas { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; transition: opacity .45s ease; }
-.scratch canvas:active { cursor: grabbing; }
-.scratch canvas:focus-visible { outline-offset: -4px; }
-.scratch.covered canvas { background: var(--ink); }
-.scratch.revealed canvas { opacity: 0; pointer-events: none; }
-.scratch.revealed .scratchValue { animation: revealPop .5s ease both; }
+/* Two compact halves, side by side at every width: race day on the left, kit collection on the right. */
+.racebar { display: grid; padding: 16px var(--gutter); grid-template-columns: 1fr 1fr; gap: clamp(14px, 3vw, 48px); background: var(--lime); }
+.racebarHalf { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.racebarHalf + .racebarHalf { padding-left: clamp(14px, 3vw, 48px); border-left: 1px solid rgba(16, 22, 19, .22); }
+.racebarHalf > span { font: 600 10px var(--ui); letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+.racebarHalf strong { font: 800 clamp(1.15rem, 2.4vw, 2.3rem)/1 var(--display); letter-spacing: -.03em; white-space: nowrap; }
+.racebarMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font: 600 clamp(10px, 1vw, 12px) var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.racebarCta { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; }
+.racebarCta svg { width: 14px; height: 14px; }
 
 /* -------------------------------------------------------------------------- */
 /* About                                                                       */
@@ -501,20 +471,7 @@ footer { padding: 60px var(--gutter) 28px; border-top: 1px solid var(--line-dark
   .heroPlace { margin-top: 12px; font-size: 13px; }
   .heroActions .button { min-width: 0; min-height: 52px; flex: 1; }
 
-  /* Phones keep the original compact bar: label, date, then distances with the entry link. */
-  .racebar { display: grid; padding: 15px 24px; grid-template-columns: 1fr auto; grid-template-areas: 'main main' 'dist cta'; gap: 6px 14px; }
-  .racebarMain { grid-area: main; gap: 6px; }
-  .racebarItem.racebarKit { display: none; }
-  .racebarItem.racebarDistances { grid-area: dist; padding-left: 0; border-left: 0; }
-  .racebarItem span { font: 500 11px var(--ui); letter-spacing: .08em; opacity: 1; }
-  .racebarItem strong { font: 800 28px var(--display); letter-spacing: -.02em; }
-  .racebarDistances span { display: none; }
-  .racebarDistances b { font: 500 11px var(--ui); letter-spacing: .08em; }
-  .racebarCta { grid-area: cta; padding: 0; gap: 7px; background: none; color: inherit; font: 700 11px var(--ui); letter-spacing: .08em; }
-  .racebarCta:hover { transform: none; text-decoration: underline; text-underline-offset: 4px; }
-  .racebarCta svg { width: 15px; height: 15px; }
-  .racebarCtaWide { display: none; }
-  .racebarCtaNarrow { display: inline; }
+  .racebar { padding: 14px 16px; }
 
   .aboutCopy { padding: 85px 24px 58px; }
   .aboutVisual { min-height: 360px; }

@@ -19,6 +19,8 @@ const fee = 200;
 const raceDate = '2026-11-29' as string | null;
 const expoStartDate = '2026-11-27';
 const expoEndDate = '2026-11-28';
+// Kit collection hours on both expo days, e.g. '10 AM – 8 PM'. Null shows "Timings to be announced".
+const kitCollectionHours = null as string | null;
 
 // When online registration closes, with the India time zone, e.g. '2026-11-20T23:59:00+05:30'.
 // Null keeps it open. Payments already in progress are still confirmed after this.
@@ -35,6 +37,7 @@ export const event = {
   minAge: 12,
   expoDates: '27 & 28 November 2026',
   expoDays: [expoStartDate, expoEndDate] as const,
+  kitCollectionHours,
   races,
   tshirtSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
   kit: ['T-Shirt', 'String Bag', 'Cap', 'Bottle', 'Wrist Sweat Band', 'Bib — 3K / 5K / 10K', '4 Safety Pins', 'Instruction Leaflet', 'Sponsor Discount Coupons'],

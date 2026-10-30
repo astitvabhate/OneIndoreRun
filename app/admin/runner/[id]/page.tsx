@@ -38,7 +38,7 @@ export default async function RunnerPage({ params, searchParams }: { params: Pro
       <StaffBar staff={staff} title="Runner" />
 
       <section className="adminPanel runnerHead">
-        <Link href="/admin/registrations" className="adminBack"><ArrowLeft size={15} /> All registrations</Link>
+        <Link href="/admin/registrations" className="adminBack pageBack"><ArrowLeft size={15} /> All registrations</Link>
         <h1>{fullName(row)}</h1>
         <p>
           <span className="mono">{regNoLabel(row)}</span> · {raceLabel(row)} · T-shirt {row.tshirt_size} · age {ageOnRaceDay(row.date_of_birth)} on race day ·{' '}

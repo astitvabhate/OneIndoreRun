@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib';
 import QRCode from 'qrcode';
 import { event, findRace, formatDate } from '../eventData';
 import { formatRegNo } from '../registrationSchema';
@@ -60,21 +60,43 @@ function label(page: PDFPage, font: PDFFont, text: string, x: number, y: number)
   page.drawText(text.toUpperCase(), { x, y, size: 7.5, font, color: muted });
 }
 
-/** Builds the downloadable race ticket: header, race band, runner, QR code and kit details. */
+/** Fonts and logo, embedded once per PDF however many tickets it holds. */
+async function ticketAssets(pdf: PDFDocument) {
+  return {
+    regular: await pdf.embedFont(StandardFonts.Helvetica),
+    bold: await pdf.embedFont(StandardFonts.HelveticaBold),
+    logo: await pdf.embedPng(Buffer.from(ticketLogoPng, 'base64')),
+  };
+}
+
+/** The downloadable race ticket for one runner. */
 export async function renderTicketPdf(ticket: TicketRow, url: string) {
   const pdf = await PDFDocument.create();
-  const regNo = formatRegNo(ticket.reg_no!); // only paid tickets, which always have a number
-  pdf.setTitle(`One Indore Run Indore ticket ${regNo}`);
+  pdf.setTitle(`One Indore Run Indore ticket ${formatRegNo(ticket.reg_no!)}`);
   pdf.setAuthor('One Indore Run Indore');
+  await addTicketPage(pdf, await ticketAssets(pdf), ticket, url);
+  return pdf.save();
+}
 
+/** Many tickets in one PDF, a page each, e.g. every runner of an organisation. */
+export async function renderTicketsPdf(tickets: TicketRow[], urlFor: (id: string) => string, title: string) {
+  const pdf = await PDFDocument.create();
+  pdf.setTitle(title);
+  pdf.setAuthor('One Indore Run Indore');
+  const assets = await ticketAssets(pdf);
+  for (const ticket of tickets) await addTicketPage(pdf, assets, ticket, urlFor(ticket.id));
+  return pdf.save();
+}
+
+/** Draws one ticket page: header, race band, runner, QR code and kit details. */
+async function addTicketPage(pdf: PDFDocument, { regular, bold, logo }: { regular: PDFFont; bold: PDFFont; logo: PDFImage }, ticket: TicketRow, url: string) {
+  const regNo = formatRegNo(ticket.reg_no!); // only paid tickets, which always have a number
   const W = 420;
   const H = 760;
   const margin = 30;
   const page = pdf.addPage([W, H]);
-  const regular = await pdf.embedFont(StandardFonts.Helvetica);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const logo = await pdf.embedPng(Buffer.from(ticketLogoPng, 'base64'));
-  const qr = await pdf.embedPng(await QRCode.toBuffer(url, { errorCorrectionLevel: 'M', margin: 1, width: 600, color: { dark: '#101613', light: '#ffffff' } }));
+  // 400 px stays sharp at the printed size and keeps a many-ticket PDF small (about 9 KB a page).
+  const qr = await pdf.embedPng(await QRCode.toBuffer(url, { errorCorrectionLevel: 'M', margin: 1, width: 400, color: { dark: '#101613', light: '#ffffff' } }));
 
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: paper });
 
@@ -118,7 +140,7 @@ export async function renderTicketPdf(ticket: TicketRow, url: string) {
   // Details: two columns, three rows
   const details: [string, string][] = [
     ['T-shirt size', ticket.tshirt_size],
-    ['Entry fee', `INR ${ticket.amount! / 100} - PAID`],
+    ticket.organisation ? ['Group entry', ticket.organisation] : ['Entry fee', `INR ${ticket.amount! / 100} - PAID`],
     ['Kit collection (Expo)', event.expoDates],
     ['Race day', raceDayLabel()],
     ['Payment ID', ticket.razorpay_payment_id ?? '—'],
@@ -143,6 +165,4 @@ export async function renderTicketPdf(ticket: TicketRow, url: string) {
     page.drawText(text, { x: margin, y: footerH - 22 - index * 12, size: 8.5, font: regular, color: white });
   });
   page.drawText(`Ticket ID ${ticket.id.slice(0, 8).toUpperCase()}`, { x: margin, y: 12, size: 7, font: regular, color: lime });
-
-  return pdf.save();
 }

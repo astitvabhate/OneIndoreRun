@@ -15,11 +15,13 @@ $$;
 begin;
 
 -- Current setup
+drop view if exists public.organisation_summary;
 drop view if exists public.registration_details;
 drop function if exists public.save_pending_registration(jsonb);
 drop function if exists public.mark_order_paid(text, text);
 drop function if exists public.collect_kit(uuid, text);
 drop function if exists public.undo_kit(uuid, text);
+drop function if exists public.collect_organisation_kits(uuid, text);
 drop function if exists public.edit_registration(uuid, jsonb, text);
 drop function if exists public.cancel_registration(uuid, text, text);
 drop function if exists public.restore_registration(uuid, text);
@@ -30,11 +32,13 @@ drop function if exists public.hit_rate_limit(text, int, int);
 drop function if exists public.delete_stale_registrations(int);
 drop function if exists public.nightly_cleanup();
 drop table if exists public.staff_users;
+drop table if exists public.issues;
 drop table if exists public.rate_limits;
 drop table if exists public.audit_log;
 drop table if exists public.kit_collections;
 drop table if exists public.payments;
 drop table if exists public.registrations;
+drop table if exists public.organisations;
 drop table if exists public.runners;
 drop table if exists public.races;
 drop sequence if exists public.registration_number_seq;

@@ -56,15 +56,18 @@ const decoyHash = hashPassword(randomBytes(16).toString('hex'));
 
 export const normaliseUsername = (username: string) => username.trim().toLowerCase();
 
-/** The active account these credentials unlock, if any. */
-export async function checkCredentials(username: string, password: string): Promise<Staff | null> {
+/** The active account these credentials unlock, null if none, or 'unavailable' if the accounts can't be read. */
+export async function checkCredentials(username: string, password: string): Promise<Staff | null | 'unavailable'> {
   const { data, error } = await db()
     .from('staff_users')
     .select('username, name, role, password_hash')
     .eq('username', normaliseUsername(username))
     .eq('active', true)
     .maybeSingle();
-  if (error) console.error('Could not look up staff account', error);
+  if (error) {
+    console.error('Could not look up staff account', error);
+    return 'unavailable';
+  }
   const ok = await passwordMatches(password, data?.password_hash ?? (await decoyHash));
   if (!data || !ok) return null;
   await db().from('staff_users').update({ last_sign_in_at: new Date().toISOString() }).eq('username', data.username);

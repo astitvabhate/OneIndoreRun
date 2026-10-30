@@ -21,7 +21,7 @@ export default function FindTicketPage() {
         <p className="eyebrow dark">Lost your ticket?</p>
         <h1>FIND YOUR<br /><em>TICKET.</em></h1>
         <p>Enter the mobile number and date of birth you registered with. We&apos;ll show every paid registration that matches.</p>
-        <p className="findHeroLink">Not registered yet? <Link href="/register">Register now</Link></p>
+        <p className="findHeroLink">Not registered yet? <Link href="/register">Register now</Link> · Paid but no ticket? <Link href="/help">Report it</Link></p>
       </section>
 
       <div className="findBody">

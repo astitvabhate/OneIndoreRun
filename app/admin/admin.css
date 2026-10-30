@@ -37,6 +37,10 @@
 .adminLoginNote svg, .adminError svg { flex: none; margin-top: 2px; }
 .adminError { display: flex; padding: 10px 12px; gap: 8px; border-left: 3px solid #c72e12; background: #fdf0ec; color: #8f1f0a; line-height: 1.5; }
 
+/* The admin error page reuses the login card, centred on its own (no photo column). */
+.adminLogin.adminErrorPage { height: auto; min-height: 100svh; padding: 24px 16px; overflow: visible; grid-template-columns: 1fr; place-items: center; }
+.adminErrorPage .adminLoginCard h1 { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; }
+
 @media (max-width: 900px) {
   .adminLogin { grid-template-columns: 1fr; }
   /* The photo becomes the dark band across the top, with the card overlapping it. */
@@ -67,44 +71,83 @@
 }
 
 /* Top bar */
-.adminBar { position: sticky; z-index: 5; top: 0; display: flex; padding: 0 24px; height: 64px; align-items: center; gap: 16px; background: var(--ink); color: #fff; }
-.adminBar .logo { width: 104px; height: 48px; }
-.adminTitle { font: 600 12px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--lime); }
-.adminBarActions { display: flex; margin-left: auto; gap: 6px; }
-.adminIconLink { display: inline-flex; padding: 8px 10px; align-items: center; gap: 6px; color: inherit; font: 600 12px var(--ui); }
+.adminBar { position: sticky; z-index: 20; top: 0; display: flex; padding: 0 24px; height: 64px; align-items: center; gap: 18px; background: var(--ink); color: #fff; }
+.adminBar .logo { width: 96px; height: 46px; }
+.adminTitle { padding-left: 16px; border-left: 1px solid rgba(255, 255, 255, .16); font: 600 11px var(--ui); letter-spacing: .1em; text-transform: uppercase; color: var(--lime); white-space: nowrap; }
+.adminNav { display: flex; height: 100%; margin-left: 8px; gap: 2px; }
+.adminNav a { position: relative; display: inline-flex; padding: 0 14px; align-items: center; gap: 8px; color: #b9c0ba; font: 600 12px var(--ui); letter-spacing: .02em; transition: color .15s, background .15s; }
+.adminNav a:hover { color: #fff; background: rgba(255, 255, 255, .06); }
+.adminNav a.active { color: #fff; }
+.adminNav a.active::after { position: absolute; right: 12px; bottom: 0; left: 12px; height: 3px; content: ''; background: var(--lime); }
+.adminBarActions { display: flex; margin-left: auto; align-items: center; gap: 6px; }
+.adminIconLink { display: inline-flex; padding: 8px 10px; align-items: center; gap: 6px; border: 0; background: none; color: inherit; font: 600 12px var(--ui); cursor: pointer; }
 .adminIconLink:hover { background: rgba(255, 255, 255, .1); }
 .adminTable .adminIconLink:hover { background: #eef0ea; }
+.adminWho { display: inline-flex; padding: 0 10px 0 4px; align-items: center; gap: 10px; }
+.adminAvatar { display: grid; width: 32px; height: 32px; flex: none; place-items: center; border-radius: 50%; background: var(--lime); color: var(--ink); font: 800 14px var(--display); }
+.adminWhoText { display: grid; line-height: 1.2; }
+.adminWhoText b { max-width: 140px; overflow: hidden; color: #fff; font: 600 13px var(--ui); text-overflow: ellipsis; white-space: nowrap; }
+.adminWhoText small { color: #9fa79f; font: 500 11px var(--ui); }
 
-.adminPage { max-width: 1280px; margin: 0 auto; padding-bottom: 40px; }
+.adminPage { padding-bottom: 40px; }
 .adminPage > :not(.adminBar) { margin-inline: 24px; }
 
+/* Page heading */
+.adminHead { display: flex; margin-top: 28px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.adminHeadDate { color: #6b716b; font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; }
+.adminHead h1 { margin-top: 6px; font-size: clamp(1.7rem, 3vw, 2.3rem); letter-spacing: -.04em; }
+.adminHeadActions { display: flex; gap: 8px; }
+
 /* Summary cards */
-.adminStats { display: grid; margin-top: 24px; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
-.adminStat { display: grid; padding: 18px; gap: 4px; background: #fff; border-top: 3px solid var(--lime); }
-.adminStat.alert { border-top-color: #c72e12; }
-.adminStat span { color: #5f655f; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
-.adminStat b { font: 800 2rem/1.1 var(--display); letter-spacing: -.03em; }
+.adminStats { display: grid; margin-top: 20px; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.adminStat { display: grid; padding: 18px 18px 16px; gap: 6px; align-content: start; background: #fff; border: 1px solid #e6e7e1; border-top: 3px solid var(--lime); }
+.adminStat.alert { border-top-color: #c72e12; background: #fffaf8; }
+.adminStat span { display: flex; align-items: center; gap: 7px; color: #5f655f; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.adminStat span svg { color: #8a8f88; }
+.adminStat.alert span svg { color: #c72e12; }
+.adminStat b { font: 800 clamp(1.5rem, 2.6vw, 2.1rem)/1.1 var(--display); letter-spacing: -.035em; white-space: nowrap; }
 .adminStat small { color: #6b716b; font-size: 12px; }
+.adminProgress { display: block; height: 6px; margin-top: 2px; background: linear-gradient(90deg, var(--ink) var(--done), #e6e7e1 var(--done)); }
+
+/* Secondary numbers: smaller tiles under the main cards; red when they need attention. */
+.adminMiniStats { display: grid; margin: 12px 0 10px; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.adminMiniStats li > a, .adminMiniStats li > div { display: flex; height: 100%; padding: 12px 14px; align-items: center; gap: 12px; border: 1px solid #e6e7e1; background: #fff; transition: border-color .15s; }
+.adminMiniStats li > a:hover { border-color: var(--ink); }
+.adminMiniStats li > a:focus-visible { outline: 2px solid var(--lime); outline-offset: -2px; }
+.adminMiniStats b { min-width: 30px; color: var(--ink); font: 800 1.45rem/1 var(--display); letter-spacing: -.03em; }
+.adminMiniStats span { display: grid; min-width: 0; flex: 1; gap: 2px; }
+.adminMiniStats strong { color: #3d433e; font: 600 11px var(--ui); letter-spacing: .05em; text-transform: uppercase; }
+.adminMiniStats small { color: #8a8f88; font-size: 12px; }
+.adminMiniArrow { flex: none; color: #9fa39d; transition: transform .15s, color .15s; }
+.adminMiniStats li > a:hover .adminMiniArrow { color: var(--ink); transform: translateX(2px); }
+.adminMiniStats li.alert > a, .adminMiniStats li.alert > div { border-color: #f1c4b8; border-left: 3px solid #c72e12; background: #fffaf8; }
+.adminMiniStats li.alert b, .adminMiniStats li.alert strong { color: #c72e12; }
 
 /* Panels and tables */
-.adminPanel { margin-top: 20px; padding: 20px; background: #fff; }
+.adminPanel { margin-top: 20px; padding: 22px; background: #fff; border: 1px solid #e6e7e1; }
 .adminPanel.alert { border-left: 4px solid #c72e12; }
 .adminPanel h2 { font-size: 1.25rem; letter-spacing: -.02em; }
 .adminPanelHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.adminHint { margin: 6px 0 14px; color: #5f655f; font-size: 13px; }
+.adminHint { margin: 6px 0 14px; color: #5f655f; font-size: 13px; line-height: 1.5; }
+.adminCount { display: flex; margin: 14px 0 6px; flex-wrap: wrap; align-items: center; gap: 0 5px; color: #5f655f; font-size: 13px; }
+.adminRefresh { margin-left: auto; }
+
+.adminCount b { color: var(--ink); }
 
 .adminTableWrap { overflow-x: auto; }
 .adminTable { width: 100%; border-collapse: collapse; white-space: nowrap; }
-.adminTable th { padding: 10px 12px; border-bottom: 2px solid var(--ink); color: #3d433e; font: 700 11px var(--ui); letter-spacing: .05em; text-align: left; text-transform: uppercase; }
-.adminTable td { padding: 10px 12px; border-bottom: 1px solid #e3e5df; vertical-align: top; }
+.adminTable th { padding: 10px 12px; border-bottom: 1px solid #cfd2cb; background: #f8f8f4; color: #5f655f; font: 700 11px var(--ui); letter-spacing: .05em; text-align: left; text-transform: uppercase; }
+.adminTable td { padding: 12px; border-bottom: 1px solid #ecede8; vertical-align: top; }
 .adminTable tbody tr:hover { background: #fafbf7; }
 .adminTable a:not(.adminIconLink) { text-decoration: underline; text-underline-offset: 3px; }
+.adminTable.list .cMobile a { text-decoration: none; }
 .adminTable.sizes td, .adminTable.sizes th { text-align: center; }
 .adminTable.sizes td:first-child, .adminTable.sizes th:first-child { text-align: left; }
 .adminTable .total td { border-top: 2px solid var(--ink); font-weight: 800; }
 .adminTable tr.unpaid { color: #6b716b; }
 .adminTable td.minor { color: #b8420f; font-weight: 700; }
 .adminEmpty { padding: 30px; color: #6b716b; text-align: center; }
+.kitDone { color: #1f7a3a; font-weight: 700; }
 
 .adminTable details summary { cursor: pointer; font-weight: 700; list-style: none; }
 .adminTable details summary::-webkit-details-marker { display: none; }
@@ -114,30 +157,108 @@
 .adminTable details dl div { display: contents; }
 .adminTable details dt { color: #6b716b; font: 600 11px/1.8 var(--ui); text-transform: uppercase; }
 .adminTable details dd { min-width: 220px; }
+.adminActionText { display: none; }
 
-.pill { display: inline-block; padding: 3px 8px; background: #eceee8; font: 700 11px var(--ui); letter-spacing: .04em; text-transform: uppercase; }
+.pill { display: inline-block; padding: 4px 9px; background: #eceee8; font: 700 10.5px var(--ui); letter-spacing: .05em; text-transform: uppercase; }
 .pill.paid { background: var(--lime); }
 
 /* Filters */
 .adminFilters { display: flex; margin-top: 16px; flex-wrap: wrap; align-items: center; gap: 8px; }
-.adminSearch { display: flex; padding: 0 12px; flex: 1 1 260px; align-items: center; gap: 8px; border: 1px solid #b9bdb6; }
-.adminSearch input { height: 42px; flex: 1; border: 0; outline: none; font: 500 15px var(--display); }
+.adminSearch { display: flex; padding: 0 12px; flex: 1 1 260px; align-items: center; gap: 8px; border: 1px solid #c9ccc5; background: #fff; color: #8a8f88; }
+.adminSearch input { height: 42px; min-width: 0; flex: 1; border: 0; outline: none; color: var(--ink); font: 500 15px var(--display); }
 .adminSearch:focus-within { border-color: var(--ink); outline: 2px solid var(--lime); }
-.adminFilters select { height: 44px; padding: 0 10px; border: 1px solid #b9bdb6; background: #fff; font: 500 14px var(--display); }
+.adminFilters select { height: 44px; padding: 0 10px; border: 1px solid #c9ccc5; background: #fff; font: 500 14px var(--display); }
 .adminClear { color: #5f655f; font-size: 13px; text-decoration: underline; }
 
-.adminPager { display: flex; margin-top: 14px; justify-content: space-between; font-weight: 700; }
-.adminFoot { margin-top: 18px; color: #6b716b; font-size: 12px; }
+.adminPager { display: flex; margin-top: 16px; align-items: center; justify-content: space-between; font-weight: 700; }
+.adminPager a { display: inline-flex; padding: 8px 12px; align-items: center; gap: 4px; border: 1px solid #c9ccc5; font: 600 12px var(--ui); }
+.adminPager a:hover { border-color: var(--ink); }
+.adminPager > span:not(:empty) { color: #5f655f; font: 600 12px var(--ui); }
+.adminFoot { margin-top: 18px; color: #8a8f88; font-size: 12px; }
 
-@media (max-width: 640px) {
-  .adminBar { padding: 0 14px; }
+@media (max-width: 1100px) {
   .adminTitle { display: none; }
+  .adminWhoText { display: none; }
+}
+@media (max-width: 900px) {
+  .adminStats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adminStat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+
+/* Phones: slim top bar, a bottom tab bar for organisers, and cards instead of wide tables. */
+@media (max-width: 760px) {
+  .adminBar { padding: 0 12px 0 14px; height: 56px; gap: 10px; }
+  .adminBar .logo { width: 80px; height: 40px; }
+  .adminNav { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; height: auto; margin: 0; padding: 0 4px env(safe-area-inset-bottom); background: var(--ink); border-top: 1px solid rgba(255, 255, 255, .08); }
+  .adminNav a { padding: 9px 0 10px; flex: 1; flex-direction: column; justify-content: center; gap: 4px; font-size: 10.5px; }
+  .adminNav a.active { color: var(--lime); }
+  .adminNav a.active::after { top: 0; right: 30%; bottom: auto; left: 30%; }
+  .admin:has(.adminNav) .adminPage { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .adminWho { padding: 0; }
+  .adminLinkText { display: none; }
+  .adminBarActions { gap: 2px; }
+  .adminBarActions .adminIconLink { padding: 10px; }
+
   .adminPage > :not(.adminBar) { margin-inline: 12px; }
-  .adminPanel { padding: 14px; }
+  .adminHead { margin-top: 18px; align-items: center; }
+  .adminHeadActions { width: 100%; }
+  .adminHeadActions > * { flex: 1; }
+  .adminStats { margin-top: 14px; gap: 8px; }
+  .adminStat { padding: 14px 14px 12px; gap: 4px; }
+  .adminStat span { font-size: 10px; letter-spacing: .04em; }
+  .adminStat span svg { display: none; }
+  .adminMiniStats { margin-top: 8px; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adminMiniStats li > a, .adminMiniStats li > div { padding: 10px 12px; gap: 10px; }
+  .adminMiniStats b { min-width: 0; font-size: 1.25rem; }
+  .adminMiniStats small { display: none; }
+  .adminMiniArrow { display: none; }
+  .adminPanel { margin-top: 14px; padding: 16px 14px; }
+
+  .adminFilters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .adminSearch { grid-column: 1 / -1; }
+  .adminFilters select { min-width: 0; padding: 0 6px; font-size: 13px; }
+  .adminFilters .button { grid-column: 1 / -1; }
+  .adminFilters .adminClear { grid-column: 1 / -1; justify-self: center; }
+  .adminCount span { display: none; }
+
+  /* Registrations: a card per runner. */
+  .adminTable.list thead { display: none; }
+  .adminTable.list, .adminTable.list tbody { display: block; white-space: normal; }
+  .adminTable.list tr {
+    display: grid; margin-top: 10px; padding: 12px 14px; gap: 10px 12px; border: 1px solid #e3e5df; background: #fff;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas: 'reg reg status' 'name name name' 'race size age' 'mobile kit date' 'actions actions actions';
+  }
+  .adminTable.list tr.unpaid { background: #fafaf7; }
+  .adminTable.list tr.emptyRow { display: block; border: 0; background: none; }
+  .adminTable.list td { display: block; padding: 0; border: 0; }
+  .adminTable.list td[data-label]::before { display: block; margin-bottom: 2px; color: #8a8f88; font: 600 10px var(--ui); letter-spacing: .06em; content: attr(data-label); text-transform: uppercase; }
+  .adminTable.list .cReg { grid-area: reg; align-self: center; color: #6b716b; font-size: 12px; }
+  .adminTable.list .cStatus { grid-area: status; justify-self: end; }
+  .adminTable.list .cName { grid-area: name; margin-top: -4px; font-size: 16px; }
+  .adminTable.list .cRace { grid-area: race; }
+  .adminTable.list .cSize { grid-area: size; }
+  .adminTable.list .cAge { grid-area: age; }
+  .adminTable.list .cMobile { grid-area: mobile; }
+  .adminTable.list .cMobile a { color: var(--ink); font-weight: 600; }
+  .adminTable.list .cKit { grid-area: kit; }
+  .adminTable.list .cDate { grid-area: date; font-size: 12px; }
+  .adminTable.list .cActions { grid-area: actions; display: flex; margin: 2px -14px -12px; padding: 0; border-top: 1px solid #ecede8; }
+  .adminTable.list .cActions .adminIconLink { padding: 11px 14px; flex: 1; justify-content: center; }
+  .adminTable.list .cActions .adminIconLink + .adminIconLink { border-left: 1px solid #ecede8; }
+  .adminActionText { display: inline; }
+  .adminTable details dd { min-width: 0; overflow-wrap: anywhere; }
+  .adminTable details dl { grid-template-columns: 1fr; gap: 0; font-size: 13px; }
+  .adminTable details dt { margin-top: 6px; }
+
+  /* Size totals: keep the race column in view while scrolling sideways. */
+  .adminTable.sizes th:first-child, .adminTable.sizes td:first-child { position: sticky; left: 0; background: #fff; }
+  .adminTable.sizes th:first-child { background: #f8f8f4; }
+  .adminTable.sizes td, .adminTable.sizes th { padding: 10px 9px; }
+  .adminPager a { padding: 10px 14px; }
 }
 
 /* Staff bar extras */
-.adminWho { display: inline-flex; padding: 0 10px; align-items: center; color: #b9c0ba; font: 500 12px var(--ui); }
 .adminIconLink.dark { color: var(--ink); }
 .adminIconLink.dark:hover { background: #eef0ea; }
 .muted { color: #9fa39d; }
@@ -206,11 +327,6 @@
 
 @media (max-width: 900px) {
   .runnerGrid { grid-template-columns: 1fr; }
-}
-@media (max-width: 640px) {
-  .adminWho, .adminLinkText { display: none; }
-  .adminBarActions { gap: 2px; }
-  .adminBarActions .adminIconLink { padding: 10px; }
 }
 
 /* Camera QR scanner on the check-in page */
@@ -282,3 +398,88 @@
 .importModalClose { position: absolute; top: 14px; right: 14px; padding: 6px; }
 .importModalClose:hover { background: #eef0ea; }
 .importModal .importActions .button { flex: 1; }
+
+/* Groups (organisations) ----------------------------------------------------- */
+.groupSearch { margin: 4px 0 16px; }
+.groupList { display: grid; gap: 10px; }
+.groupCard { display: flex; padding: 16px 18px; align-items: center; gap: 14px; border: 1px solid #e3e5df; background: #fff; transition: border-color .15s; }
+.groupCard:hover { border-color: var(--ink); }
+.groupCardIcon { display: grid; width: 40px; height: 40px; flex: none; place-items: center; background: #f1f2ec; }
+.groupCard:hover .groupCardIcon { background: var(--lime); }
+.groupCardMain { display: grid; min-width: 0; flex: 1; gap: 3px; }
+.groupCardMain b { overflow: hidden; font: 700 1.05rem var(--display); letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
+.groupCardMain small { color: #6b716b; font-size: 12.5px; }
+.groupCardStats { display: flex; gap: 22px; color: #5f655f; font-size: 12.5px; white-space: nowrap; }
+.groupCardStats b { color: var(--ink); font: 800 15px var(--display); }
+.groupCardStats .kitDone b { color: #1f7a3a; }
+.groupCardArrow { flex: none; color: #8a8f88; }
+.groupContact { display: flex; margin-top: 8px; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: #5f655f; font-size: 13px; }
+.groupContact a { display: inline-flex; align-items: center; gap: 5px; color: var(--ink); font-weight: 600; }
+.groupContact span { color: #8a8f88; }
+.adminHead .adminBack { margin-bottom: 10px; }
+.groupActions { display: grid; gap: 0 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.groupActions h2 { margin-bottom: 4px; }
+.groupChip { display: flex; margin-bottom: 4px; padding: 10px 12px; align-items: center; gap: 8px; background: #f4f3ee; font-size: 13.5px; }
+.groupChip span { flex: 1; }
+.groupChip a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.groupChip a[aria-label] { display: grid; padding: 4px; place-items: center; text-decoration: none; }
+
+@media (max-width: 900px) {
+  .groupActions { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .groupCard { padding: 14px; flex-wrap: wrap; gap: 10px 12px; }
+  .groupCardIcon { width: 36px; height: 36px; }
+  .groupCardMain { flex: 1 1 calc(100% - 90px); }
+  .groupCardStats { order: 3; width: 100%; padding-top: 10px; justify-content: space-between; gap: 8px; border-top: 1px solid #ecede8; }
+  .groupActions .importActions .button { flex: 1 1 100%; }
+}
+
+/* Nav badge (open issues) and a tighter menu on tablet widths now that there are six links. */
+.adminNavIcon { position: relative; display: inline-grid; }
+.adminNavBadge { position: absolute; top: -7px; right: -11px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #e5481f; color: #fff; font: 700 10px/17px var(--ui); text-align: center; }
+@media (min-width: 761px) and (max-width: 1040px) {
+  .adminNav a { padding: 0 12px; }
+  .adminNav a > span:last-child, .adminBarActions .adminLinkText { display: none; }
+}
+@media (max-width: 760px) {
+  .adminNav a { font-size: 10px; }
+}
+
+/* Issues reported by runners ------------------------------------------------- */
+.issueTabs { display: flex; margin: 4px 0 4px; gap: 4px; border-bottom: 1px solid #e3e5df; }
+.issueTabs a { display: inline-flex; margin-bottom: -1px; padding: 10px 14px; align-items: center; gap: 7px; border-bottom: 3px solid transparent; color: #5f655f; font: 600 13px var(--ui); }
+.issueTabs a:hover { color: var(--ink); }
+.issueTabs a.active { border-bottom-color: var(--lime); color: var(--ink); }
+.issueTabs b { min-width: 20px; padding: 1px 6px; border-radius: 10px; background: #e5481f; color: #fff; font: 700 11px var(--ui); text-align: center; }
+.issueList { display: grid; margin-top: 16px; gap: 12px; }
+.issueCard { display: grid; padding: 16px 18px; gap: 12px; border: 1px solid #e3e5df; border-left: 4px solid #e5481f; background: #fff; }
+.issueCard.resolved { border-left-color: #1f7a3a; background: #fbfbf8; }
+.issueTop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.issueRef { font: 800 15px var(--display); }
+.issueWhen { margin-left: auto; color: #8a8f88; font-size: 12px; }
+.pill.issueCat.payment { background: #fde3db; color: #8f1f0a; }
+.pill.issueCat.ticket { background: #e3ecfb; color: #1d3f7a; }
+.pill.issueCat.kit { background: #fff1c9; color: #6b4b00; }
+.issueMessage { color: var(--ink); font-size: 15px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.issueFacts { display: flex; flex-wrap: wrap; gap: 8px 26px; }
+.issueFacts div { display: grid; gap: 2px; }
+.issueFacts dt { color: #8a8f88; font: 600 10px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.issueFacts dd { font-weight: 600; overflow-wrap: anywhere; }
+.issueFacts a { display: inline-flex; align-items: center; gap: 5px; }
+.issueLookup { justify-self: start; margin-top: -4px; padding-left: 0; }
+.issueResolve { display: flex; padding-top: 12px; gap: 8px; border-top: 1px solid #ecede8; }
+.issueResolve input { min-width: 0; height: 44px; flex: 1; padding: 0 12px; border: 1px solid #c9ccc5; font: 500 14px var(--display); }
+.issueResolve input:focus { border-color: var(--ink); outline: 2px solid var(--lime); }
+.issueResolution { display: grid; padding-top: 12px; gap: 6px; border-top: 1px solid #ecede8; }
+.issueResolution p { display: flex; align-items: center; gap: 6px; color: #1f7a3a; font: 600 12.5px var(--ui); }
+.issueResolution .issueNote { color: #3d433e; font: 400 14px/1.5 var(--display); }
+.issueResolution form { justify-self: start; }
+.issueResolution .adminIconLink { padding-left: 0; }
+
+@media (max-width: 760px) {
+  .issueCard { padding: 14px; }
+  .issueWhen { width: 100%; margin-left: 0; order: 5; }
+  .issueResolve { flex-direction: column; }
+  .issueResolve .button { width: 100%; }
+}

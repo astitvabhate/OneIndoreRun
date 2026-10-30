@@ -3,6 +3,7 @@
 -- To start over, run drop_everything.sql first.
 --
 --   races            the runs on offer (3 KM, 5 KM, 10 KM)
+--   organisations    schools, companies and clubs whose runners were imported together
 --   runners          one row per person: who they are and how to reach them
 --   registrations    one row per runner per race: T-shirt, consents, status, OIRI number
 --   payments         one row per Razorpay checkout attempt for a registration
@@ -10,8 +11,10 @@
 --   audit_log        every change made by organisers and volunteers
 --   rate_limits      short-lived request counters that slow down bots
 --   staff_users      one login per organiser and volunteer (added with npm run staff:add)
+--   issues           problems reported by runners from the Help page
 --
 --   registration_details  read-only view joining the above, used by the dashboard and tickets
+--   organisation_summary  read-only: runners, kits and money per organisation (Groups page)
 --
 -- The website's server is the only client (service-role key). Every multi-step change goes
 -- through a function below, so it either happens completely or not at all.
@@ -31,6 +34,15 @@ create table public.races (
   capacity int check (capacity > 0)       -- most paid runners allowed; empty = no limit
 );
 insert into public.races (slug, name, sort_order) values ('3km', '3 KM', 1), ('5km', '5 KM', 2), ('10km', '10 KM', 3);
+
+create table public.organisations (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(name) between 2 and 120),
+  contact_name text,
+  contact_mobile text,
+  created_at timestamptz not null default now()
+);
+create unique index organisations_name on public.organisations (lower(name));
 
 create table public.runners (
   id uuid primary key default gen_random_uuid(),
@@ -74,17 +86,19 @@ create table public.registrations (
   admin_notes text,
   cancelled_at timestamptz,
   cancel_reason text,
+  organisation_id uuid references public.organisations (id) on delete restrict, -- imported with this group
   created_at timestamptz not null default now(),
   unique (runner_id, race)                          -- a runner enters each race once
 );
 create index registrations_status_created on public.registrations (status, created_at desc);
 create index registrations_created on public.registrations (created_at desc);
 create index registrations_race_paid on public.registrations (race) where status = 'paid';
+create index registrations_organisation on public.registrations (organisation_id) where organisation_id is not null;
 
 create table public.payments (
   order_id text primary key,                        -- Razorpay order id
   registration_id uuid not null references public.registrations (id) on delete restrict,
-  amount int not null check (amount > 0),           -- in paise (₹200 = 20000)
+  amount int not null check (amount >= 0),          -- in paise (₹200 = 20000); group entries may be free
   status text not null default 'created' check (status in ('created', 'paid', 'failed', 'refund_due', 'refunded')),
   refund_reason text check (refund_reason in ('duplicate', 'cancelled', 'sold_out')),
   payment_id text unique,                           -- Razorpay payment id, once paid
@@ -133,10 +147,29 @@ create table public.staff_users (
   created_at timestamptz not null default now()
 );
 
+-- Problems reported by runners from the website's Help page; organisers resolve them in the dashboard.
+create table public.issues (
+  id bigint generated always as identity primary key,   -- the runner's reference number, e.g. #42
+  category text not null check (category in ('payment', 'ticket', 'details', 'kit', 'other')),
+  name text not null,
+  mobile text not null,
+  email text,
+  reg_no text,                                            -- as the runner typed it, e.g. OIRI-00012
+  payment_ref text,                                       -- Razorpay payment ID or UPI reference, if they have one
+  message text not null,
+  status text not null default 'open' check (status in ('open', 'resolved')),
+  resolution text,                                        -- what the organiser did
+  resolved_by text,
+  resolved_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index issues_status_created on public.issues (status, created_at desc);
+
 create sequence public.registration_number_seq;
 
 -- No public access: only the website's server (service-role key, which bypasses these).
 alter table public.races enable row level security;
+alter table public.organisations enable row level security;
 alter table public.runners enable row level security;
 alter table public.registrations enable row level security;
 alter table public.payments enable row level security;
@@ -144,6 +177,7 @@ alter table public.kit_collections enable row level security;
 alter table public.audit_log enable row level security;
 alter table public.rate_limits enable row level security;
 alter table public.staff_users enable row level security;
+alter table public.issues enable row level security;
 
 -- ─── Read model ─────────────────────────────────────────────────────────────────────────────
 
@@ -156,11 +190,26 @@ select
   u.occupation, u.mobile, u.email, u.address, u.city, u.pincode, u.emergency_name, u.emergency_mobile,
   u.guardian_name, u.guardian_mobile, u.search_text,
   p.amount, p.payment_id as razorpay_payment_id, p.paid_at,
-  k.collected_at as kit_collected_at, k.collected_by as kit_collected_by
+  k.collected_at as kit_collected_at, k.collected_by as kit_collected_by,
+  r.organisation_id, o.name as organisation
 from public.registrations r
 join public.runners u on u.id = r.runner_id
 left join public.payments p on p.registration_id = r.id and p.status = 'paid'
-left join public.kit_collections k on k.registration_id = r.id;
+left join public.kit_collections k on k.registration_id = r.id
+left join public.organisations o on o.id = r.organisation_id;
+
+-- One row per organisation with its paid runners, kits handed over and money received.
+create view public.organisation_summary with (security_invoker = true) as
+select
+  o.id, o.name, o.contact_name, o.contact_mobile, o.created_at,
+  count(r.id) filter (where r.status = 'paid') as runners,
+  count(k.registration_id) filter (where r.status = 'paid') as kits,
+  coalesce(sum(p.amount) filter (where r.status = 'paid'), 0) as amount_paise
+from public.organisations o
+left join public.registrations r on r.organisation_id = o.id
+left join public.kit_collections k on k.registration_id = r.id
+left join public.payments p on p.registration_id = r.id and p.status = 'paid'
+group by o.id;
 
 -- ─── Checkout ───────────────────────────────────────────────────────────────────────────────
 
@@ -406,6 +455,37 @@ begin
 end;
 $$;
 
+-- Marks the kit of every paid runner of an organisation as collected, e.g. when the kits are
+-- delivered to a school before the expo. Kits already collected are left as they were.
+-- Returns how many kits were marked.
+create function public.collect_organisation_kits(p_organisation uuid, p_by text)
+returns int
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_ids uuid[];
+  v_name text;
+begin
+  select o.name into v_name from public.organisations o where o.id = p_organisation;
+  if v_name is null then return 0; end if;
+
+  with added as (
+    insert into public.kit_collections (registration_id, collected_by)
+    select r.id, p_by from public.registrations r
+    where r.organisation_id = p_organisation and r.status = 'paid'
+    on conflict do nothing
+    returning registration_id
+  )
+  select array_agg(registration_id) into v_ids from added;
+  if v_ids is null then return 0; end if;
+
+  insert into public.audit_log (registration_id, action, actor, details)
+  select id, 'kit_collected', p_by, jsonb_build_object('reason', 'Sent to ' || v_name)
+  from unnest(v_ids) as id;
+  return cardinality(v_ids);
+end;
+$$;
+
 -- Saves an organiser's edit to a registration and its runner (keys as in the tables; the race
 -- is 'race'). Returns 'saved', 'not_found', or 'duplicate' if it would clash with another
 -- runner or registration.
@@ -513,6 +593,7 @@ declare
 begin
   foreach f in array array[
     'save_pending_registration(jsonb)', 'mark_order_paid(text, text)', 'collect_kit(uuid, text)', 'undo_kit(uuid, text)',
+    'collect_organisation_kits(uuid, text)',
     'edit_registration(uuid, jsonb, text)', 'cancel_registration(uuid, text, text)', 'restore_registration(uuid, text)',
     'admin_summary(date)', 'race_has_room(text)', 'mark_payment_refunded(text, text)', 'hit_rate_limit(text, int, int)',
     'delete_stale_registrations(int)', 'nightly_cleanup()'
@@ -529,6 +610,8 @@ grant usage, select on sequence public.registration_number_seq to service_role;
 
 comment on table public.races is 'The runs on offer.';
 comment on column public.races.capacity is 'Most paid runners allowed. Empty = no limit. Change it here at any time.';
+comment on table public.organisations is 'Schools, companies and clubs whose runners were imported together (Groups in the dashboard).';
+comment on column public.registrations.organisation_id is 'The organisation this runner was imported with; empty for runners who registered themselves.';
 comment on table public.runners is 'One row per person. Identified by mobile + date of birth + first name.';
 comment on table public.registrations is 'One row per runner per race. Retrying checkout reuses the row; the number is given on payment.';
 comment on column public.registrations.id is 'Also the ticket id in the runner''s QR code.';
@@ -540,8 +623,10 @@ comment on column public.payments.refund_reason is 'duplicate: already paid · c
 comment on column public.payments.amount is 'In paise (₹200 = 20000).';
 comment on table public.kit_collections is 'Kits handed over at the expo, and by whom.';
 comment on table public.audit_log is 'Every change by organisers and volunteers (edits with old and new values, cancellations, kit check-ins) and every staff sign-in.';
+comment on view public.organisation_summary is 'Read-only: each organisation with its paid runners, kits handed over and money received.';
 comment on view public.registration_details is 'Read-only: each registration with its runner, payment and kit status.';
 comment on table public.rate_limits is 'Short-lived request counters that slow down bots. Cleared nightly.';
+comment on table public.issues is 'Problems reported by runners from the Help page, and how organisers resolved them.';
 comment on table public.staff_users is 'One login per organiser (admin) and expo volunteer. Passwords are stored as scrypt hashes.';
 
 commit;

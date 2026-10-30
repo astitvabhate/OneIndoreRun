@@ -6,6 +6,8 @@ const quickLinks = [
   ['Race kit', '/#race-kit'],
   ['Route', '/#route'],
   ['FAQ', '/#faq'],
+  ['Find my ticket', '/ticket/find'],
+  ['Help', '/help'],
 ];
 
 export function Footer() {

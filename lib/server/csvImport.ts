@@ -2,16 +2,20 @@ import { event, isValidDate } from '../eventData';
 import { ageOnRaceDay, formatRegNo, type RegistrationInput } from '../registrationSchema';
 import { adminEditSchema, type AdminEdit } from './admin';
 import { db, markPaid, recordOrder, savePending } from './db';
+import { saveOrganisation } from './organisations';
 
-// Bulk entries from a spreadsheet, e.g. a school's list of students. Each valid row becomes a
-// paid registration with its own OIRI number and ticket, exactly as if the runner had paid online,
-// except the payment is recorded as collected offline (payment id "offline_…").
+// Bulk entries from an organisation's spreadsheet, e.g. a school's list of students. Each valid row
+// becomes a paid registration with its own OIRI number and ticket, exactly as if the runner had paid
+// online, except the payment is recorded as collected offline (payment id "offline_…") at whatever
+// the organisation paid per runner, which may be nothing. Every runner is linked to the organisation
+// (see organisations.ts), so its tickets can be downloaded and its kits handed over together.
 
 export const maxImportRows = 2000;
 export const maxImportBytes = 2 * 1024 * 1024;
 
 /** What the organiser fills in once for the whole file; used wherever a row leaves a column empty. */
 export interface ImportDefaults {
+  organisation: string;
   race: string;
   tshirtSize: string;
   city: string;
@@ -37,6 +41,7 @@ export interface ImportReport {
   preview: { row: number; name: string; race: string; tshirtSize: string; dateOfBirth: string; mobile: string }[];
   imported: Imported[];
   alreadyRegistered: RowProblem[];
+  organisationId?: string; // after an import, for the link to its Groups page
 }
 
 // ─── CSV ─────────────────────────────────────────────────────────────────────────────────────
@@ -274,12 +279,18 @@ const toInput = (edit: AdminEdit): RegistrationInput => ({
 type Outcome = { imported: Imported } | { already: RowProblem } | { problem: RowProblem };
 
 /** Saves one runner and records their offline payment, which gives them the next OIRI number. */
-async function importOne({ row, name, edit }: ParsedRow & { edit: AdminEdit }, defaults: ImportDefaults, fileName: string, by: string): Promise<Outcome> {
+async function importOne({ row, name, edit }: ParsedRow & { edit: AdminEdit }, defaults: ImportDefaults, organisationId: string, fileName: string, by: string): Promise<Outcome> {
   const race = raceName(edit.category);
   const saved = await savePending(toInput(edit));
   if (saved.status === 'full') return { problem: { row, name, message: `The ${race} run is sold out.` } };
   if (saved.status === 'cancelled') return { problem: { row, name, message: `Already in the ${race} run but cancelled. Restore it from the runner's page instead.` } };
-  if (saved.status === 'paid') return { already: { row, name, message: `Already registered for the ${race} run (${formatRegNo(saved.regNo!)}).` } };
+  if (saved.status === 'paid') {
+    // Paid already (e.g. online): leave the payment alone, but add them to this group so its ticket PDF
+    // and kit hand-over include them, unless they already belong to another group.
+    const { data: linked } = await db().from('registrations').update({ organisation_id: organisationId }).eq('id', saved.id).is('organisation_id', null).select('id');
+    const note = linked?.length ? ' Added to this group.' : '';
+    return { already: { row, name, message: `Already registered for the ${race} run (${formatRegNo(saved.regNo!)}).${note}` } };
+  }
 
   const orderId = `offline_${saved.id.slice(0, 8)}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   await recordOrder(saved.id, orderId, Math.round(defaults.feeInr * 100));
@@ -291,12 +302,13 @@ async function importOne({ row, name, edit }: ParsedRow & { edit: AdminEdit }, d
     return { problem: { row, name, message: paid?.outcome === 'sold_out' ? `The ${race} run sold out during the import.` : 'Could not be marked as paid.' } };
   }
 
+  await db().from('registrations').update({ organisation_id: organisationId }).eq('id', saved.id);
   if (defaults.note) await db().from('registrations').update({ admin_notes: defaults.note }).eq('id', saved.id).is('admin_notes', null);
   await db().from('audit_log').insert({
     registration_id: saved.id,
     action: 'edited',
     actor: by,
-    details: { changes: { status: { from: 'pending', to: `paid (imported from ${fileName})` } } },
+    details: { changes: { status: { from: 'pending', to: `paid (imported from ${fileName} for ${defaults.organisation})` } } },
   });
   return { imported: { row, name, regNo: formatRegNo(paid.regNo), race, ticketId: saved.id } };
 }
@@ -347,8 +359,10 @@ export async function runImport(text: string, fileName: string, defaults: Import
   };
   if (mode === 'check') return report;
 
+  const organisationId = await saveOrganisation(defaults.organisation, defaults.contactName, cleanMobile(defaults.contactMobile));
+  report.organisationId = organisationId;
   const outcomes = await pool(valid, 6, (row) =>
-    importOne(row, defaults, fileName, by).catch((error): Outcome => {
+    importOne(row, defaults, organisationId, fileName, by).catch((error): Outcome => {
       console.error('CSV import: row failed', row.row, error);
       return { problem: { row: row.row, name: row.name, message: 'Could not be saved (database error). Import the file again to retry this row.' } };
     }),

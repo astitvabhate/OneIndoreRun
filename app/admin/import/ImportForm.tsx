@@ -8,7 +8,9 @@ import { importRunners, type ImportState } from '../actions';
 type Report = NonNullable<NonNullable<ImportState>['report']>;
 
 /** Upload form: "Check file" validates without saving; "Import" saves every valid row. The file stays selected between the two. */
-export function ImportForm({ races, sizes, fee, feeLabel }: { races: string[][]; sizes: string[]; fee: number; feeLabel: string }) {
+export function ImportForm({ races, sizes, fee, feeLabel, organisations, organisation }: {
+  races: string[][]; sizes: string[]; fee: number; feeLabel: string; organisations: string[]; organisation: string;
+}) {
   const [state, action, pending] = useActionState<ImportState, FormData>(importRunners, undefined);
   const [, startTransition] = useTransition();
   const [mode, setMode] = useState<'check' | 'import'>('check');
@@ -38,6 +40,19 @@ export function ImportForm({ races, sizes, fee, feeLabel }: { races: string[][];
       <section className="adminPanel">
         <form className="adminForm" onSubmit={submit} onChange={() => setChecked(false)}>
           <fieldset>
+            <legend>Organisation</legend>
+            <span className="wide">
+              <label>
+                Organisation these runners are from (school, company, club)
+                <input name="organisation" list="import-organisations" defaultValue={organisation} required minLength={2} maxLength={120} placeholder="e.g. Delhi Public School, Nipania" />
+              </label>
+            </span>
+            <datalist id="import-organisations">{organisations.map((name) => <option key={name} value={name} />)}</datalist>
+            <label>Contact person (e.g. teacher in charge)<input name="contactName" maxLength={80} /></label>
+            <label>Contact mobile<input name="contactMobile" inputMode="numeric" maxLength={10} /></label>
+          </fieldset>
+          <p className="adminHint">Pick an existing organisation to add more runners to it. The contact person is used as guardian for under-18s and as emergency contact when a row has none, and their mobile when a runner has no mobile.</p>
+          <fieldset>
             <legend>File</legend>
             <label className="wide">
               CSV file (from Excel or Google Sheets: Save as / Download → CSV)
@@ -64,14 +79,11 @@ export function ImportForm({ races, sizes, fee, feeLabel }: { races: string[][];
             <label>City<input name="city" defaultValue="Indore" maxLength={80} /></label>
             <label>Pincode<input name="pincode" inputMode="numeric" maxLength={6} /></label>
             <span className="wide"><label>Address (e.g. the school&apos;s)<input name="address" maxLength={300} /></label></span>
-            <label>Contact person (e.g. teacher in charge)<input name="contactName" maxLength={80} /></label>
-            <label>Contact mobile<input name="contactMobile" inputMode="numeric" maxLength={10} /></label>
           </fieldset>
-          <p className="adminHint">The contact person is used as guardian for under-18s and as emergency contact when a row has none, and their mobile when a runner has no mobile.</p>
           <fieldset>
             <legend>Payment &amp; notes</legend>
-            <label>Fee collected per runner (₹)<input name="feeInr" type="number" min={1} max={100000} defaultValue={fee} required /></label>
-            <span className="wide"><label>Note on every runner (e.g. school name, receipt no.)<input name="note" maxLength={300} /></label></span>
+            <label>Fee received per runner (₹, 0 if not paid)<input name="feeInr" type="number" min={0} max={100000} defaultValue={fee} required /></label>
+            <span className="wide"><label>Note on every runner (e.g. receipt no.)<input name="note" maxLength={300} /></label></span>
             <label className="wide importConsent">
               <input type="checkbox" name="consent" required />
               <span>The school / parents have accepted the risk, rules and photo consents for every runner in this file.</span>
@@ -84,7 +96,7 @@ export function ImportForm({ races, sizes, fee, feeLabel }: { races: string[][];
               <Upload size={16} /> {canImport ? `Import ${report.valid} runner${report.valid === 1 ? '' : 's'}` : 'Import'}
             </button>
           </div>
-          {!canImport && <p className="adminHint">Check the file first: Import turns on once at least one row is valid. Default entry fee is {feeLabel}.</p>}
+          {!canImport && <p className="adminHint">Check the file first: Import turns on once at least one row is valid. The full entry fee is {feeLabel}; enter what the organisation actually paid per runner.</p>}
         </form>
       </section>
 
@@ -126,9 +138,10 @@ function ConfirmImport({ data, report, races, onCancel, onConfirm }: { data: For
   const field = (name: string) => String(data.get(name) ?? '').trim();
   const race = races.find(([slug]) => slug === field('race'))?.[1];
   const rows: [string, string][] = [
+    ['Organisation', field('organisation')],
     ['File', report.fileName],
     ['Runners', `${report.valid} of ${report.totalRows} rows${report.problems.length ? ` (${report.problems.length} skipped)` : ''}`],
-    ['Fee recorded', `₹${field('feeInr')} each, paid offline`],
+    ['Fee recorded', Number(field('feeInr')) > 0 ? `₹${field('feeInr')} each, paid offline` : 'Free (₹0)'],
     ['Race', race ? `${race} where the file has none` : 'From the file'],
     ['T-shirt', field('tshirtSize') ? `${field('tshirtSize')} where the file has none` : 'From the file'],
   ];
@@ -168,7 +181,7 @@ function ReportPanel({ report }: { report: Report }) {
           {report.imported.length} runner{report.imported.length === 1 ? '' : 's'} registered and marked paid.
           {report.alreadyRegistered.length > 0 && ` ${report.alreadyRegistered.length} were already registered and left as they were.`}
           {report.problems.length > 0 && ` ${report.problems.length} rows were skipped (see below).`}
-          {' '}<Link href="/admin">See them on the dashboard</Link>.
+          {' '}{report.organisationId ? <Link href={`/admin/groups/${report.organisationId}`}>Open the group to download tickets</Link> : <Link href="/admin/registrations">See them in Runners</Link>}.
         </p>
       )}
       <p className="adminHint">

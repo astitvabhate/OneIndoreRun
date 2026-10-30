@@ -9,6 +9,7 @@ import { PasswordField } from './PasswordField';
 const errors: Record<string, string> = {
   credentials: 'That username or password is not right.',
   busy: 'Too many sign-in attempts. Please wait 10 minutes and try again.',
+  unavailable: 'Sign-in is unavailable right now (the database could not be reached). Please try again shortly.',
 };
 
 export default async function AdminLogin({ searchParams }: { searchParams: Promise<{ error?: string }> }) {

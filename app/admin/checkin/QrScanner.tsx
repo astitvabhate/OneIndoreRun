@@ -99,7 +99,7 @@ export function QrScanner({ autoStart = false }: { autoStart?: boolean }) {
             router.push(`/admin/checkin/${id}`);
           } else if (text !== lastWrong) {
             lastWrong = text;
-            setMessage('That QR code is not a One Indore Run ticket.');
+            setMessage('That QR code is not a One Indore Run Indore ticket.');
           }
         } catch {
           // A frame that fails to decode is normal; try the next one.

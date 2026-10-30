@@ -20,10 +20,14 @@ export const benefits = [
   ['02', 'Run your distance', 'Choose the stride that feels right: 3 KM, 5 KM or 10 KM.'],
   ['03', 'Race day energy', 'A day designed around the people who make it move.'],
   ['04', 'Finisher rewards', 'Earn the medal, certificate, and your finish-line smile.'],
-  ['05', 'Make a memory', 'Capture your moment with the One Indore Run photo booth.'],
+  ['05', 'Make a memory', 'Capture your moment with the One Indore Run Indore photo booth.'],
 ] as const;
 
-export const raceHighlights = ['For everyone', 'Find your rhythm', 'Own the distance'];
+// Short tags shown on the race cards; every distance gets the same kit and finisher rewards.
+// Ordered so the tags pack into even rows on a phone (short items first, then a long tag paired with a short one).
+export const raceInclusions = ['T-Shirt', 'Bib', 'Finisher Medal', 'Certificate', 'Hydration & Route Support', 'Refreshments', 'On-ground Medical Support', 'Photo Booth'];
+
+// export const raceHighlights =['For everyone', 'Find your rhythm', 'Own the distance'];
 
 export const raceDescriptions = [
   'Perfect for beginners, families and anyone who wants to be part of the movement.',

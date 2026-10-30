@@ -12,7 +12,7 @@ import { getTicket } from '../../../lib/server/db';
 import { paidOn, raceDayLabel, runnerName, siteOrigin, ticketQrSvg, ticketUrl } from '../../../lib/server/ticket';
 import './ticket.css';
 
-export const metadata: Metadata = { title: 'Race ticket | One Indore Run', robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: 'Race ticket | One Indore Run Indore', robots: { index: false, follow: false } };
 
 // The runner's own ticket, always shown the same way. Kit check-in lives at /admin/checkin/<id>;
 // staff who reach this page with their phone camera app just get a link there.

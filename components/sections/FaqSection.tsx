@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import { event } from '../../lib/eventData';
 
 // Native <details> handles open/close and keyboard access without any client JavaScript.
+// The shared name makes them an exclusive accordion: opening one closes the others.
 export function FaqSection() {
   return (
     <section id="faq" className="faq wrap">
@@ -9,7 +10,7 @@ export function FaqSection() {
       <h2>RUNNER<br /><em>FAQS.</em></h2>
       <div className="faqList">
         {event.faqs.map(([question, answer]) => (
-          <details key={question} className="faqItem">
+          <details key={question} name="faq" className="faqItem">
             <summary>{question}<Plus aria-hidden="true" /></summary>
             <p>{answer}</p>
           </details>

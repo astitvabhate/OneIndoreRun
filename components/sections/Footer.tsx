@@ -1,5 +1,3 @@
-import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
 import { Logo } from '../Logo';
 
 const quickLinks = [
@@ -20,11 +18,10 @@ export function Footer() {
         <nav aria-label="Footer" className="footerLinks">
           {quickLinks.map(([label, href]) => <a key={href} href={href}>{label}</a>)}
         </nav>
-        <Link href="/register" className="button">Register now <ArrowUpRight size={17} /></Link>
       </div>
       <div className="footerBottom">
-        <span>© 2026 One Indore Run. All rights reserved.</span>
-        <span>Terms &amp; Conditions · Privacy Policy · Refund Policy</span>
+        <span>© 2026 One Indore Run Indore. All rights reserved.</span>
+        {/* <span>Terms &amp; Conditions · Privacy Policy · Refund Policy</span> */}
       </div>
     </footer>
   );

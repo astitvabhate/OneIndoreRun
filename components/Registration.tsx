@@ -100,7 +100,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
       </header>
 
       <section className="regHero">
-        <p className="eyebrow dark">One Indore Run · Indore 2.0</p>
+        <p className="eyebrow dark">One Indore Run Indore 2.0</p>
         <h1>SECURE YOUR<br /><em>SPOT.</em></h1>
         <p>Choose your run. Show up. Run Indore.</p>
         <p className="findTicketLink">Already registered? <Link href="/ticket/find">Find your ticket</Link></p>
@@ -337,7 +337,7 @@ function NotOpen({ onEdit }: { onEdit: () => void }) {
     <section className="review notice" role="status">
       <p className="eyebrow dark">Almost there</p>
       <h2>PAYMENT<br />OPENS <em>SOON.</em></h2>
-      <p>Online payment for One Indore Run isn&apos;t live yet, so <strong>your registration has not been submitted</strong> and no money has been taken.</p>
+      <p>Online payment for One Indore Run Indore isn&apos;t live yet, so <strong>your registration has not been submitted</strong> and no money has been taken.</p>
       <p>Please come back once registrations open to complete your entry.</p>
       <div className="reviewActions">
         <button type="button" className="button outline" onClick={onEdit}><PencilLine size={16} /> Back to my details</button>

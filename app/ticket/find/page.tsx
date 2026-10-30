@@ -5,7 +5,7 @@ import { Logo } from '../../../components/Logo';
 import { FindTicketForm } from './FindTicketForm';
 import '../[id]/ticket.css';
 
-export const metadata: Metadata = { title: 'Find my ticket | One Indore Run', robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: 'Find my ticket | One Indore Run Indore', robots: { index: false, follow: false } };
 
 // For runners who lost their ticket link: look it up with the details they registered with.
 export default function FindTicketPage() {

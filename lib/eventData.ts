@@ -16,8 +16,9 @@ const fee = 200;
 
 // Race day as 'YYYY-MM-DD' once it is fixed. Until then, ages are checked against the first
 // expo day, which is never later than race day, so nobody under the minimum age slips through.
-const raceDate = null as string | null;
+const raceDate = '2026-11-29' as string | null;
 const expoStartDate = '2026-11-27';
+const expoEndDate = '2026-11-28';
 
 // When online registration closes, with the India time zone, e.g. '2026-11-20T23:59:00+05:30'.
 // Null keeps it open. Payments already in progress are still confirmed after this.
@@ -26,13 +27,14 @@ const registrationClosesAt = null as string | null;
 export const formatFee = (amount = fee) => `₹${amount}`;
 
 export const event = {
-  name: 'ONE INDORE RUN',
-  edition: 'INDORE 2.0',
+  name: 'ONE INDORE RUN INDORE',
+  edition: '2.0',
   raceDate,
   registrationClosesAt,
   fee,
   minAge: 12,
   expoDates: '27 & 28 November 2026',
+  expoDays: [expoStartDate, expoEndDate] as const,
   races,
   tshirtSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
   kit: ['T-Shirt', 'String Bag', 'Cap', 'Bottle', 'Wrist Sweat Band', 'Bib — 3K / 5K / 10K', '4 Safety Pins', 'Instruction Leaflet', 'Sponsor Discount Coupons'],
@@ -69,6 +71,12 @@ export function ageOn(dateOfBirth: string, onDate: string) {
   const [by, bm, bd] = parseDate(dateOfBirth);
   const [y, m, d] = parseDate(onDate);
   return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
+}
+
+/** Formats YYYY-MM-DD with custom parts, e.g. { weekday: 'long' } gives "Sunday", independent of the viewer's time zone. */
+export function formatDateParts(iso: string, options: Intl.DateTimeFormatOptions) {
+  const [y, m, d] = parseDate(iso);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-IN', { ...options, timeZone: 'UTC' });
 }
 
 /** Formats YYYY-MM-DD as e.g. "29 November 2026", independent of the viewer's time zone. */

@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowUpRight, Ticket } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import './not-found.css';
 
-export const metadata: Metadata = { title: 'Page not found | One Indore Run', robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: 'Page not found | One Indore Run Indore', robots: { index: false, follow: false } };
 
 // Shown for any unknown address, and wherever a page calls notFound() (e.g. a ticket link that doesn't exist).
 export default function NotFound() {

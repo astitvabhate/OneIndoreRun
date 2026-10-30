@@ -7,10 +7,10 @@ const display = DM_Sans({ subsets: ['latin'], variable: '--font-display', displa
 const ui = Inter({ subsets: ['latin'], variable: '--font-ui', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'One Indore Run | Indore 2.0',
+  title: 'One Indore Run Indore 2.0',
   description: 'One Indore Run Indore 2.0 — run your distance, celebrate the city and be part of the running community.',
   openGraph: {
-    title: 'One Indore Run | Indore 2.0',
+    title: 'One Indore Run Indore 2.0',
     description: 'Choose 3 KM, 5 KM or 10 KM and run the heart of Indore.',
     type: 'website',
   },

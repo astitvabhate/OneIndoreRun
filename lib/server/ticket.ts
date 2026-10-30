@@ -64,8 +64,8 @@ function label(page: PDFPage, font: PDFFont, text: string, x: number, y: number)
 export async function renderTicketPdf(ticket: TicketRow, url: string) {
   const pdf = await PDFDocument.create();
   const regNo = formatRegNo(ticket.reg_no!); // only paid tickets, which always have a number
-  pdf.setTitle(`One Indore Run ticket ${regNo}`);
-  pdf.setAuthor('One Indore Run');
+  pdf.setTitle(`One Indore Run Indore ticket ${regNo}`);
+  pdf.setAuthor('One Indore Run Indore');
 
   const W = 420;
   const H = 760;

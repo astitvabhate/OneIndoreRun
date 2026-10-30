@@ -20,7 +20,7 @@ export default async function ImportPage({ searchParams }: { searchParams: Promi
       <StaffBar staff={staff} title="Import runners" />
 
       <section className="adminPanel">
-        <Link href={current ? `/admin/groups/${current.id}` : '/admin/groups'} className="adminIconLink dark"><ArrowLeft size={15} /> {current ? current.name : 'Groups'}</Link>
+        <Link href={current ? `/admin/groups/${current.id}` : '/admin/groups'} className="adminIconLink dark pageBack"><ArrowLeft size={15} /> {current ? current.name : 'Groups'}</Link>
         <h2>Import runners from an organisation</h2>
         <p className="adminHint">
           For group entries such as a school&apos;s students. Every valid row becomes a <b>paid</b> registration with its own OIRI number and ticket,
@@ -39,7 +39,7 @@ export default async function ImportPage({ searchParams }: { searchParams: Promi
       </section>
 
       <ImportForm
-        races={event.races.map((race) => [race.slug, race.distance])} sizes={event.tshirtSizes} fee={event.fee} feeLabel={formatFee()}
+        races={event.races.map((race) => [race.slug, race.distance])} sizes={event.tshirtSizes} feeLabel={formatFee()}
         organisations={organisations.map((organisation) => organisation.name)} organisation={current?.name ?? ''}
       />
     </main>

@@ -8,8 +8,8 @@ import { importRunners, type ImportState } from '../actions';
 type Report = NonNullable<NonNullable<ImportState>['report']>;
 
 /** Upload form: "Check file" validates without saving; "Import" saves every valid row. The file stays selected between the two. */
-export function ImportForm({ races, sizes, fee, feeLabel, organisations, organisation }: {
-  races: string[][]; sizes: string[]; fee: number; feeLabel: string; organisations: string[]; organisation: string;
+export function ImportForm({ races, sizes, feeLabel, organisations, organisation }: {
+  races: string[][]; sizes: string[]; feeLabel: string; organisations: string[]; organisation: string;
 }) {
   const [state, action, pending] = useActionState<ImportState, FormData>(importRunners, undefined);
   const [, startTransition] = useTransition();
@@ -43,52 +43,50 @@ export function ImportForm({ races, sizes, fee, feeLabel, organisations, organis
             <legend>Organisation</legend>
             <span className="wide">
               <label>
-                Organisation these runners are from (school, company, club)
+                Organisation (school, company, club)
                 <input name="organisation" list="import-organisations" defaultValue={organisation} required minLength={2} maxLength={120} placeholder="e.g. Delhi Public School, Nipania" />
               </label>
             </span>
             <datalist id="import-organisations">{organisations.map((name) => <option key={name} value={name} />)}</datalist>
-            <label>Contact person (e.g. teacher in charge)<input name="contactName" maxLength={80} /></label>
-            <label>Contact mobile<input name="contactMobile" inputMode="numeric" maxLength={10} /></label>
+            <label>Contact Person's Name<input name="contactName" maxLength={80} placeholder="e.g. teacher in charge" /></label>
+            <label>Contact Mobile Number<input name="contactMobile" inputMode="numeric" maxLength={10} /></label>
           </fieldset>
-          <p className="adminHint">Pick an existing organisation to add more runners to it. The contact person is used as guardian for under-18s and as emergency contact when a row has none, and their mobile when a runner has no mobile.</p>
           <fieldset>
-            <legend>File</legend>
+            <legend>Runners</legend>
             <label className="wide">
-              CSV file (from Excel or Google Sheets: Save as / Download → CSV)
+              CSV file
               <input type="file" name="file" accept=".csv,text/csv" required />
             </label>
-          </fieldset>
-          <fieldset>
-            <legend>Defaults for empty cells</legend>
-            <label>
-              Race
-              <select name="race" defaultValue="">
-                <option value="">From the file</option>
-                {races.map(([slug, name]) => <option key={slug} value={slug}>{name}</option>)}
-              </select>
-            </label>
-            <label>
-              T-shirt size
-              <select name="tshirtSize" defaultValue="">
-                <option value="">From the file</option>
-                {sizes.map((size) => <option key={size}>{size}</option>)}
-              </select>
-            </label>
-            <label>Email (e.g. the school&apos;s)<input name="email" type="email" maxLength={120} /></label>
-            <label>City<input name="city" defaultValue="Indore" maxLength={80} /></label>
-            <label>Pincode<input name="pincode" inputMode="numeric" maxLength={6} /></label>
-            <span className="wide"><label>Address (e.g. the school&apos;s)<input name="address" maxLength={300} /></label></span>
-          </fieldset>
-          <fieldset>
-            <legend>Payment &amp; notes</legend>
-            <label>Fee received per runner (₹, 0 if not paid)<input name="feeInr" type="number" min={0} max={100000} defaultValue={fee} required /></label>
-            <span className="wide"><label>Note on every runner (e.g. receipt no.)<input name="note" maxLength={300} /></label></span>
+            <label>Fee paid per runner (₹)<input name="feeInr" type="number" min={0} max={100000} defaultValue={0} required /></label>
             <label className="wide importConsent">
               <input type="checkbox" name="consent" required />
-              <span>The school / parents have accepted the risk, rules and photo consents for every runner in this file.</span>
+              <span>The organisation / parents have accepted the risk, rules and photo consents for every runner in this file.</span>
             </label>
           </fieldset>
+          <details className="importMore">
+            <summary>More options <small>Race, T-shirt, email, address and a note, used where the file leaves a cell empty</small></summary>
+            <fieldset>
+              <label>
+                Race
+                <select name="race" defaultValue="">
+                  <option value="">From the file</option>
+                  {races.map(([slug, name]) => <option key={slug} value={slug}>{name}</option>)}
+                </select>
+              </label>
+              <label>
+                T-shirt size
+                <select name="tshirtSize" defaultValue="">
+                  <option value="">From the file</option>
+                  {sizes.map((size) => <option key={size}>{size}</option>)}
+                </select>
+              </label>
+              <label>Email<input name="email" type="email" maxLength={120} /></label>
+              <label>City<input name="city" defaultValue="Indore" maxLength={80} /></label>
+              <label>Pincode<input name="pincode" inputMode="numeric" maxLength={6} /></label>
+              <span className="wide"><label>Address<input name="address" maxLength={300} /></label></span>
+              <span className="wide"><label>Note on every runner (e.g. receipt no.)<input name="note" maxLength={300} /></label></span>
+            </fieldset>
+          </details>
           {state?.message && <p className="adminError" role="alert">{state.message}</p>}
           <div className="importActions">
             <button className="button outline" type="submit" name="mode" value="check" disabled={pending}><FileCheck2 size={16} /> Check file</button>
@@ -96,7 +94,7 @@ export function ImportForm({ races, sizes, fee, feeLabel, organisations, organis
               <Upload size={16} /> {canImport ? `Import ${report.valid} runner${report.valid === 1 ? '' : 's'}` : 'Import'}
             </button>
           </div>
-          {!canImport && <p className="adminHint">Check the file first: Import turns on once at least one row is valid. The full entry fee is {feeLabel}; enter what the organisation actually paid per runner.</p>}
+          {!canImport && <p className="adminHint">Check the file first: Import turns on once at least one row is valid. The contact person stands in as guardian and emergency contact where a row has none. Full entry fee is {feeLabel}.</p>}
         </form>
       </section>
 

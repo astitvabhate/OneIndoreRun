@@ -27,7 +27,7 @@ export default async function Group({ params, searchParams }: { params: Promise<
 
       <header className="adminHead">
         <div>
-          <Link href="/admin/groups" className="adminBack"><ArrowLeft size={15} /> All groups</Link>
+          <Link href="/admin/groups" className="adminBack pageBack"><ArrowLeft size={15} /> All groups</Link>
           <h1>{group.name}</h1>
           <p className="groupContact">
             {group.contact_name ?? 'No contact person'}

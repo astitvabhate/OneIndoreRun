@@ -9,6 +9,7 @@
 --   kit_collections  one row per kit handed over at the expo
 --   audit_log        every change made by organisers and volunteers
 --   rate_limits      short-lived request counters that slow down bots
+--   staff_users      one login per organiser and volunteer (added with npm run staff:add)
 --
 --   registration_details  read-only view joining the above, used by the dashboard and tickets
 --
@@ -121,6 +122,17 @@ create table public.rate_limits (
   hits int not null
 );
 
+-- One login per organiser (admin) and expo volunteer. Added with `npm run staff:add`.
+create table public.staff_users (
+  username text primary key check (username ~ '^[a-z0-9._-]{3,32}$'), -- lower case, what they type to sign in
+  name text not null check (length(name) between 2 and 40),         -- shown in the activity log, e.g. 'Ravi (volunteer)'
+  role text not null check (role in ('admin', 'volunteer')),        -- admin: everything; volunteer: kit check-in only
+  password_hash text not null,                                      -- scrypt, never the password itself
+  active boolean not null default true,                             -- false signs them out and blocks sign-in
+  last_sign_in_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 create sequence public.registration_number_seq;
 
 -- No public access: only the website's server (service-role key, which bypasses these).
@@ -131,6 +143,7 @@ alter table public.payments enable row level security;
 alter table public.kit_collections enable row level security;
 alter table public.audit_log enable row level security;
 alter table public.rate_limits enable row level security;
+alter table public.staff_users enable row level security;
 
 -- ─── Read model ─────────────────────────────────────────────────────────────────────────────
 
@@ -529,6 +542,7 @@ comment on table public.kit_collections is 'Kits handed over at the expo, and by
 comment on table public.audit_log is 'Every change by organisers and volunteers (edits with old and new values, cancellations, kit check-ins) and every staff sign-in.';
 comment on view public.registration_details is 'Read-only: each registration with its runner, payment and kit status.';
 comment on table public.rate_limits is 'Short-lived request counters that slow down bots. Cleared nightly.';
+comment on table public.staff_users is 'One login per organiser (admin) and expo volunteer. Passwords are stored as scrypt hashes.';
 
 commit;
 

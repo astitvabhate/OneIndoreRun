@@ -29,6 +29,7 @@ drop function if exists public.mark_payment_refunded(text, text);
 drop function if exists public.hit_rate_limit(text, int, int);
 drop function if exists public.delete_stale_registrations(int);
 drop function if exists public.nightly_cleanup();
+drop table if exists public.staff_users;
 drop table if exists public.rate_limits;
 drop table if exists public.audit_log;
 drop table if exists public.kit_collections;

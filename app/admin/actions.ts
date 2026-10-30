@@ -1,25 +1,31 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { adminEditSchema, cancelRunner, collectKit, recordSignIn, restoreRunner, undoKit, updateRunner } from '../../lib/server/admin';
 import { maxImportBytes, runImport, type ImportReport } from '../../lib/server/csvImport';
-import { endSession, requireAdmin, requireStaff, roleForPassword, staffLabel, startSession } from '../../lib/server/adminAuth';
+import { checkCredentials, endSession, normaliseUsername, requireAdmin, requireStaff, staffLabel, startSession } from '../../lib/server/adminAuth';
+import { clientIp, withinLimits } from '../../lib/server/rateLimit';
 
 // Every action checks the caller's role itself: server actions can be called directly, not only from our buttons.
 
 const slowDown = () => new Promise((resolve) => setTimeout(resolve, 800)); // makes password guessing slow
 
 export async function login(formData: FormData) {
-  const name = String(formData.get('name') ?? '').trim().slice(0, 40);
-  const role = roleForPassword(String(formData.get('password') ?? ''));
-  if (!role) {
+  const username = normaliseUsername(String(formData.get('username') ?? '')).slice(0, 64);
+  const allowed = await withinLimits([
+    { key: `login:ip:${clientIp(await headers())}`, max: 30, windowSeconds: 600 },
+    { key: `login:user:${username}`, max: 10, windowSeconds: 600 },
+  ]);
+  if (!allowed) redirect('/admin/login?error=busy');
+  const staff = await checkCredentials(username, String(formData.get('password') ?? '').slice(0, 200));
+  if (!staff) {
     await slowDown();
-    redirect('/admin/login?error=password');
+    redirect('/admin/login?error=credentials');
   }
-  if (name.length < 2) redirect('/admin/login?error=name');
-  await startSession(role, name);
-  await recordSignIn(staffLabel({ role, name }));
-  redirect(role === 'admin' ? '/admin' : '/admin/checkin');
+  await startSession(staff);
+  await recordSignIn(staffLabel(staff));
+  redirect(staff.role === 'admin' ? '/admin' : '/admin/checkin');
 }
 
 export async function logout() {

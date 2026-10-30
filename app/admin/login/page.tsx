@@ -4,10 +4,11 @@ import { AlertCircle, ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { Logo } from '../../../components/Logo';
 import { getStaff, isAdminConfigured } from '../../../lib/server/adminAuth';
 import { login } from '../actions';
+import { PasswordField } from './PasswordField';
 
 const errors: Record<string, string> = {
-  password: 'That password is not right.',
-  name: 'Please enter your name (it is recorded against check-ins and edits).',
+  credentials: 'That username or password is not right.',
+  busy: 'Too many sign-in attempts. Please wait 10 minutes and try again.',
 };
 
 export default async function AdminLogin({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -39,18 +40,18 @@ export default async function AdminLogin({ searchParams }: { searchParams: Promi
                 <p className="adminError" role="alert"><AlertCircle size={16} /> {errors[error]}</p>
               )}
               <label>
-                Your name
-                <input name="name" autoComplete="name" placeholder="e.g. Priya Sharma" required minLength={2} maxLength={40} autoFocus />
+                Username
+                <input name="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="e.g. priya.sharma" required maxLength={32} autoFocus />
               </label>
               <label>
                 Password
-                <input type="password" name="password" autoComplete="current-password" placeholder="••••••••••••" required />
+                <PasswordField />
               </label>
               <button className="button adminLoginSubmit" type="submit">Sign in <ArrowRight size={16} /></button>
-              <p className="adminLoginNote"><ShieldCheck size={15} /> Volunteers use the volunteer password and can only check in kits. Every action is logged under your name.</p>
+              <p className="adminLoginNote"><ShieldCheck size={15} /> Use the username and password given to you. Every action is logged under your name.</p>
             </>
           ) : (
-            <p className="adminError"><AlertCircle size={16} /> <span>Admin access is switched off. Set <code>ADMIN_PASSWORD</code> (at least 12 characters) in <code>.env.local</code>, or in Vercel for the live site.</span></p>
+            <p className="adminError"><AlertCircle size={16} /> <span>Admin access is switched off. Set <code>STAFF_SESSION_SECRET</code> (at least 32 characters) and the Supabase keys in <code>.env.local</code>, or in Vercel for the live site.</span></p>
           )}
         </form>
       </section>

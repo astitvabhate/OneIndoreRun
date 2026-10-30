@@ -1,12 +1,19 @@
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { db } from './db';
+import { serverConfig } from './config';
 
-// Two shared passwords: ADMIN_PASSWORD (organisers: everything) and VOLUNTEER_PASSWORD (expo
-// volunteers: kit check-in only). A login sets a signed, http-only cookie holding the role and the
-// person's name for 12 hours. Changing either password signs everyone out, since both form the key.
+// One login per person, stored in the staff_users table (added with `npm run staff:add`).
+// Role 'admin' (organisers: everything) or 'volunteer' (expo volunteers: kit check-in only).
+// A login sets a signed, http-only cookie holding the username for 12 hours; every request
+// re-reads the account, so switching it off (active = false) or changing its role applies at once.
+// Changing STAFF_SESSION_SECRET signs everyone out.
 export type StaffRole = 'admin' | 'volunteer';
 export interface Staff {
+  username: string;
   role: StaffRole;
   name: string;
 }
@@ -17,31 +24,56 @@ export const staffLabel = (staff: Staff) => `${staff.name} (${staff.role})`;
 const cookieName = 'oir_staff';
 const sessionHours = 12;
 
-const adminPassword = () => process.env.ADMIN_PASSWORD ?? '';
-const volunteerPassword = () => process.env.VOLUNTEER_PASSWORD ?? '';
-const usable = (password: string) => password.length >= 12;
-export const isAdminConfigured = () => usable(adminPassword());
+const sessionSecret = () => process.env.STAFF_SESSION_SECRET ?? '';
+export const isAdminConfigured = () => sessionSecret().length >= 32 && Boolean(serverConfig.supabaseUrl && serverConfig.supabaseServiceKey);
 
-const signingKey = () => createHash('sha256').update(`oir-staff:${adminPassword()}:${volunteerPassword()}`).digest();
-const sign = (value: string) => createHmac('sha256', signingKey()).update(value).digest('hex');
-const equal = (a: string, b: string) => {
+const sign = (value: string) => createHmac('sha256', sessionSecret()).update(value).digest('hex');
+const equal = (a: Buffer | string, b: Buffer | string) => {
   const x = Buffer.from(a);
   const y = Buffer.from(b);
   return x.length === y.length && timingSafeEqual(x, y);
 };
-// Both sides are hashed to the same length first, so the comparison takes constant time.
-const matches = (attempt: string, password: string) => usable(password) && equal(sign(attempt), sign(password));
 
-/** Which role a password unlocks, if any. */
-export function roleForPassword(attempt: string): StaffRole | null {
-  if (matches(attempt, adminPassword())) return 'admin';
-  if (matches(attempt, volunteerPassword())) return 'volunteer';
-  return null;
+// Password hashes: 'scrypt$<salt>$<hash>', both base64url. scripts/add-staff.mjs writes the same format.
+const scryptAsync = promisify(scrypt) as (password: string, salt: Buffer, keylen: number) => Promise<Buffer>;
+const keyLength = 64;
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16);
+  const hash = await scryptAsync(password, salt, keyLength);
+  return `scrypt$${salt.toString('base64url')}$${hash.toString('base64url')}`;
 }
 
-export async function startSession(role: StaffRole, name: string) {
+async function passwordMatches(attempt: string, stored: string) {
+  const [scheme, salt, hash] = stored.split('$');
+  if (scheme !== 'scrypt' || !salt || !hash) return false;
+  const expected = Buffer.from(hash, 'base64url');
+  return equal(await scryptAsync(attempt, Buffer.from(salt, 'base64url'), expected.length), expected);
+}
+
+// Checked against when the username does not exist, so a wrong username takes as long as a wrong password.
+const decoyHash = hashPassword(randomBytes(16).toString('hex'));
+
+export const normaliseUsername = (username: string) => username.trim().toLowerCase();
+
+/** The active account these credentials unlock, if any. */
+export async function checkCredentials(username: string, password: string): Promise<Staff | null> {
+  const { data, error } = await db()
+    .from('staff_users')
+    .select('username, name, role, password_hash')
+    .eq('username', normaliseUsername(username))
+    .eq('active', true)
+    .maybeSingle();
+  if (error) console.error('Could not look up staff account', error);
+  const ok = await passwordMatches(password, data?.password_hash ?? (await decoyHash));
+  if (!data || !ok) return null;
+  await db().from('staff_users').update({ last_sign_in_at: new Date().toISOString() }).eq('username', data.username);
+  return { username: data.username, name: data.name, role: data.role };
+}
+
+export async function startSession(staff: Staff) {
   const expires = String(Date.now() + sessionHours * 3_600_000);
-  const payload = `${role}.${expires}.${Buffer.from(name).toString('base64url')}`;
+  const payload = `${Buffer.from(staff.username).toString('base64url')}.${expires}`;
   (await cookies()).set(cookieName, `${payload}.${sign(payload)}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -55,15 +87,22 @@ export async function endSession() {
   (await cookies()).delete({ name: cookieName, path: '/' });
 }
 
-/** The signed-in organiser or volunteer, or null. */
-export async function getStaff(): Promise<Staff | null> {
+/** The signed-in organiser or volunteer, or null. Looked up once per request. */
+export const getStaff = cache(async (): Promise<Staff | null> => {
   if (!isAdminConfigured()) return null;
   const parts = ((await cookies()).get(cookieName)?.value ?? '').split('.');
-  if (parts.length !== 4) return null;
-  const [role, expires, name, signature] = parts;
-  const valid = (role === 'admin' || role === 'volunteer') && Number(expires) > Date.now() && equal(signature, sign(`${role}.${expires}.${name}`));
-  return valid ? { role, name: Buffer.from(name, 'base64url').toString() } : null;
-}
+  if (parts.length !== 3) return null;
+  const [username, expires, signature] = parts;
+  if (!(Number(expires) > Date.now()) || !equal(signature, sign(`${username}.${expires}`))) return null;
+  const { data, error } = await db()
+    .from('staff_users')
+    .select('username, name, role')
+    .eq('username', Buffer.from(username, 'base64url').toString())
+    .eq('active', true)
+    .maybeSingle();
+  if (error) console.error('Could not load staff account', error);
+  return data ? { username: data.username, name: data.name, role: data.role } : null;
+});
 
 /** For pages any staff member may use (check-in). */
 export async function requireStaff() {

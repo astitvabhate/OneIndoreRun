@@ -25,6 +25,11 @@
 .adminLoginCard input::placeholder { color: #a3a8a1; }
 .adminLoginCard input:hover { border-color: #9fa39d; }
 .adminLoginCard input:focus { border-color: var(--ink); background: #fff; outline: 2px solid var(--lime); outline-offset: 0; }
+.adminPassword { position: relative; display: grid; }
+.adminPassword input { width: 100%; padding-right: 48px; }
+.adminPassword button { position: absolute; top: 0; right: 0; bottom: 0; display: grid; width: 46px; place-items: center; border: 0; background: none; color: #6b716b; cursor: pointer; }
+.adminPassword button:hover { color: var(--ink); }
+.adminPassword button:focus-visible { outline: 2px solid var(--lime); outline-offset: -4px; }
 .adminLoginSubmit { width: 100%; gap: 8px; margin-top: 4px; }
 .adminLoginSubmit svg { transition: transform .2s; }
 .adminLoginSubmit:hover svg { transform: translateX(3px); }

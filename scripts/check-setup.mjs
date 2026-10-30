@@ -35,7 +35,7 @@ if (!supabaseUrl || !serviceKey) {
     if (table.response.ok) {
       ok(`connected; ${table.response.headers.get('content-range')?.split('/')[1] ?? 0} registrations`);
       const missing = [];
-      for (const name of ['races', 'runners', 'payments', 'kit_collections', 'audit_log', 'rate_limits', 'registration_details']) {
+      for (const name of ['races', 'runners', 'payments', 'kit_collections', 'audit_log', 'rate_limits', 'staff_users', 'registration_details']) {
         if (!(await query(`${name}?limit=1`)).response.ok) missing.push(name);
       }
       missing.length

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Menu, Ticket, X } from 'lucide-react';
+import { ArrowUpRight, LifeBuoy, Menu, Ticket, X } from 'lucide-react';
 import { Logo } from './Logo';
 
 const links = [
@@ -40,7 +40,8 @@ export function Navbar() {
         {links.map(([label, href]) => <a key={href} href={href}>{label}</a>)}
       </nav>
       <div className="navActions">
-        <Link className="navTicket" href="/ticket/find"><Ticket size={15} /> Find ticket</Link>
+        <Link className="navTicket" href="/help" aria-label="Help"><LifeBuoy size={15} /> <span>Help</span></Link>
+        <Link className="navTicket" href="/ticket/find" aria-label="Find ticket"><Ticket size={15} /> <span>Find ticket</span></Link>
         <Link className="button small" href="/register">Register <ArrowUpRight size={15} /></Link>
       </div>
       <button className="menu" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>
@@ -50,6 +51,7 @@ export function Navbar() {
         <div className="mobileNav">
           {links.map(([label, href]) => <a key={href} href={href} onClick={() => setOpen(false)}>{label}</a>)}
           <Link href="/ticket/find" onClick={() => setOpen(false)}>Find my ticket</Link>
+          <Link href="/help" onClick={() => setOpen(false)}>Help &amp; report an issue</Link>
           <Link className="button" href="/register">Register now <ArrowUpRight size={17} /></Link>
         </div>
       )}

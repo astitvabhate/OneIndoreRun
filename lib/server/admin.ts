@@ -12,6 +12,8 @@ export interface AdminRegistration {
   tshirt_size: string;
   consent_media: boolean;
   admin_notes: string | null;
+  organisation_id: string | null;
+  organisation: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
   created_at: string;
@@ -58,7 +60,7 @@ const columns =
   'id, reg_no, status, category, tshirt_size, consent_media, admin_notes, cancelled_at, cancel_reason, created_at, ' +
   'runner_id, first_name, middle_name, last_name, date_of_birth, gender, blood_group, occupation, mobile, email, address, city, ' +
   'pincode, emergency_name, emergency_mobile, guardian_name, guardian_mobile, amount, razorpay_payment_id, paid_at, ' +
-  'kit_collected_at, kit_collected_by';
+  'kit_collected_at, kit_collected_by, organisation_id, organisation';
 
 const details = () => db().from('registration_details');
 
@@ -280,6 +282,7 @@ export interface Filters {
   race: string;
   status: 'paid' | 'unpaid' | 'cancelled' | 'all';
   kit: '' | 'collected' | 'waiting';
+  org: string; // organisation id, from a Groups page
 }
 
 export function readFilters(params: Record<string, string | string[] | undefined>): Filters {
@@ -291,6 +294,7 @@ export function readFilters(params: Record<string, string | string[] | undefined
     race: findRace(one('race')) ? one('race') : '',
     status: status === 'unpaid' || status === 'cancelled' || status === 'all' ? status : 'paid',
     kit: kit === 'collected' || kit === 'waiting' ? kit : '',
+    org: uuidPattern.test(one('org')) ? one('org') : '',
   };
 }
 
@@ -306,12 +310,13 @@ function searchFilter(q: string) {
 }
 
 /** The registrations matching the dashboard filters, with the total count. */
-function filteredRegistrations({ q, race, status, kit }: Filters) {
+function filteredRegistrations({ q, race, status, kit, org }: Filters) {
   let query = details().select(columns, { count: 'exact' });
   if (status === 'paid') query = query.eq('status', 'paid');
   if (status === 'unpaid') query = query.eq('status', 'pending');
   if (status === 'cancelled') query = query.eq('status', 'cancelled');
   if (race) query = query.eq('category', race);
+  if (org) query = query.eq('organisation_id', org);
   if (kit === 'collected') query = query.not('kit_collected_at', 'is', null);
   if (kit === 'waiting') query = query.eq('status', 'paid').is('kit_collected_at', null);
   const search = searchFilter(q);
@@ -441,6 +446,7 @@ const csvColumns: [string, (row: AdminRegistration) => unknown][] = [
   ['Started at', (row) => formatDateTime(row.created_at)],
   ['Cancelled at', (row) => formatDateTime(row.cancelled_at)],
   ['Cancel reason', (row) => row.cancel_reason],
+  ['Group', (row) => row.organisation],
   ['Admin notes', (row) => row.admin_notes],
 ];
 

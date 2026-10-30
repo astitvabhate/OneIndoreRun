@@ -3,24 +3,29 @@ import { ArrowLeft, Download } from 'lucide-react';
 import { event, formatFee } from '../../../lib/eventData';
 import { requireAdmin } from '../../../lib/server/adminAuth';
 import { maxImportRows, templateCsv } from '../../../lib/server/csvImport';
+import { getOrganisation, listOrganisations } from '../../../lib/server/organisations';
 import { StaffBar } from '../StaffBar';
 import { ImportForm } from './ImportForm';
 
 // A big school list takes a while to import: give the server action time to finish.
 export const maxDuration = 300;
 
-export default async function ImportPage() {
+export default async function ImportPage({ searchParams }: { searchParams: Promise<{ group?: string }> }) {
   const staff = await requireAdmin();
+  const { group } = await searchParams;
+  // Opened from a group's page: add more runners to that organisation.
+  const [organisations, current] = await Promise.all([listOrganisations(''), group ? getOrganisation(group) : null]);
   return (
     <main className="adminPage">
       <StaffBar staff={staff} title="Import runners" />
 
       <section className="adminPanel">
-        <Link href="/admin" className="adminIconLink dark"><ArrowLeft size={15} /> Dashboard</Link>
-        <h2>Import runners from a CSV</h2>
+        <Link href={current ? `/admin/groups/${current.id}` : '/admin/groups'} className="adminIconLink dark"><ArrowLeft size={15} /> {current ? current.name : 'Groups'}</Link>
+        <h2>Import runners from an organisation</h2>
         <p className="adminHint">
           For group entries such as a school&apos;s students. Every valid row becomes a <b>paid</b> registration with its own OIRI number and ticket,
-          recorded as paid offline (no Razorpay payment). Runners already registered for that race are skipped, so importing the same file twice is safe.
+          recorded as paid offline at whatever the organisation paid per runner (₹0 if nothing). The runners are grouped under the organisation,
+          so you can download all their QR tickets and mark their kits collected together from Groups. Runners already registered for that race are skipped, so importing the same file twice is safe.
           Up to {maxImportRows.toLocaleString('en-IN')} rows per file.
         </p>
         <ul className="importColumns">
@@ -33,7 +38,10 @@ export default async function ImportPage() {
         </a>
       </section>
 
-      <ImportForm races={event.races.map((race) => [race.slug, race.distance])} sizes={event.tshirtSizes} fee={event.fee} feeLabel={formatFee()} />
+      <ImportForm
+        races={event.races.map((race) => [race.slug, race.distance])} sizes={event.tshirtSizes} fee={event.fee} feeLabel={formatFee()}
+        organisations={organisations.map((organisation) => organisation.name)} organisation={current?.name ?? ''}
+      />
     </main>
   );
 }

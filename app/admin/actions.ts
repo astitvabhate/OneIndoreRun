@@ -1,25 +1,35 @@
 'use server';
 
+import { headers } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { adminEditSchema, cancelRunner, collectKit, recordSignIn, restoreRunner, undoKit, updateRunner } from '../../lib/server/admin';
 import { maxImportBytes, runImport, type ImportReport } from '../../lib/server/csvImport';
-import { endSession, requireAdmin, requireStaff, roleForPassword, staffLabel, startSession } from '../../lib/server/adminAuth';
+import { checkCredentials, endSession, normaliseUsername, requireAdmin, requireStaff, staffLabel, startSession } from '../../lib/server/adminAuth';
+import { reopenIssue, resolveIssue } from '../../lib/server/issues';
+import { collectOrganisationKits, getOrganisation } from '../../lib/server/organisations';
+import { clientIp, withinLimits } from '../../lib/server/rateLimit';
 
 // Every action checks the caller's role itself: server actions can be called directly, not only from our buttons.
 
 const slowDown = () => new Promise((resolve) => setTimeout(resolve, 800)); // makes password guessing slow
 
 export async function login(formData: FormData) {
-  const name = String(formData.get('name') ?? '').trim().slice(0, 40);
-  const role = roleForPassword(String(formData.get('password') ?? ''));
-  if (!role) {
+  const username = normaliseUsername(String(formData.get('username') ?? '')).slice(0, 64);
+  const allowed = await withinLimits([
+    { key: `login:ip:${clientIp(await headers())}`, max: 30, windowSeconds: 600 },
+    { key: `login:user:${username}`, max: 10, windowSeconds: 600 },
+  ]);
+  if (!allowed) redirect('/admin/login?error=busy');
+  const staff = await checkCredentials(username, String(formData.get('password') ?? '').slice(0, 200));
+  if (staff === 'unavailable') redirect('/admin/login?error=unavailable');
+  if (!staff) {
     await slowDown();
-    redirect('/admin/login?error=password');
+    redirect('/admin/login?error=credentials');
   }
-  if (name.length < 2) redirect('/admin/login?error=name');
-  await startSession(role, name);
-  await recordSignIn(staffLabel({ role, name }));
-  redirect(role === 'admin' ? '/admin' : '/admin/checkin');
+  await startSession(staff);
+  await recordSignIn(staffLabel(staff));
+  redirect(staff.role === 'admin' ? '/admin' : '/admin/checkin');
 }
 
 export async function logout() {
@@ -43,6 +53,36 @@ export async function undoKitCheckIn(formData: FormData) {
   const id = idFrom(formData);
   await undoKit(id, staffLabel(staff));
   redirect(`/admin/runner/${id}?saved=kit`);
+}
+
+/** Kits delivered to an organisation before the expo: marks every remaining kit of the group collected. */
+export async function collectGroupKits(formData: FormData) {
+  const staff = await requireAdmin();
+  const group = await getOrganisation(idFrom(formData));
+  if (!group) redirect('/admin/groups');
+  if (formData.get('confirm') !== 'on') redirect(`/admin/groups/${group.id}`);
+  const marked = await collectOrganisationKits(group.id, staffLabel(staff));
+  redirect(`/admin/groups/${group.id}?kits=${marked}`);
+}
+
+const issueIdFrom = (formData: FormData) => {
+  const id = Number(formData.get('id'));
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+};
+
+/** Closes a runner's reported issue with a note of what was done. The Issues page re-renders in place. */
+export async function resolveReportedIssue(formData: FormData) {
+  const staff = await requireAdmin();
+  const id = issueIdFrom(formData);
+  if (id) await resolveIssue(id, String(formData.get('resolution') ?? '').trim().slice(0, 500), staffLabel(staff));
+  revalidatePath('/admin/issues');
+}
+
+export async function reopenReportedIssue(formData: FormData) {
+  await requireAdmin();
+  const id = issueIdFrom(formData);
+  if (id) await reopenIssue(id);
+  revalidatePath('/admin/issues');
 }
 
 export type EditState = { errors?: Record<string, string[] | undefined>; message?: string } | undefined;
@@ -82,13 +122,15 @@ export async function importRunners(_previous: ImportState, formData: FormData):
   if (!/\.(csv|txt)$/i.test(file.name)) return { message: 'Please upload a .csv file. In Excel or Google Sheets: File → Save as / Download → CSV.' };
 
   const text = (field: string) => String(formData.get(field) ?? '').trim().slice(0, 300);
+  const organisation = text('organisation').replace(/\s+/g, ' ').slice(0, 120);
+  if (organisation.length < 2) return { message: 'Enter the organisation these runners are from (e.g. the school\'s name).' };
   const feeInr = Number(formData.get('feeInr'));
-  if (!(feeInr >= 1 && feeInr <= 100_000)) return { message: 'Enter the fee collected per runner (at least ₹1).' };
+  if (!(feeInr >= 0 && feeInr <= 100_000)) return { message: 'Enter the fee received per runner (₹0 if the organisation has not paid).' };
   if (formData.get('consent') !== 'on') return { message: 'Please confirm that consent has been collected for these runners.' };
 
   const mode = formData.get('mode') === 'import' ? 'import' : 'check';
   const result = await runImport(await file.text(), file.name, {
-    race: text('race'), tshirtSize: text('tshirtSize'), city: text('city'), address: text('address'), pincode: text('pincode'),
+    organisation, race: text('race'), tshirtSize: text('tshirtSize'), city: text('city'), address: text('address'), pincode: text('pincode'),
     email: text('email'), contactName: text('contactName'), contactMobile: text('contactMobile'), note: text('note'), feeInr,
   }, mode, staffLabel(staff));
   return typeof result === 'string' ? { message: result } : { report: result };

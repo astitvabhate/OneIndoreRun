@@ -4,3 +4,6 @@ out
 *.tsbuildinfo
 .env*.local
 .env
+# Staff logins with real passwords (see scripts/add-staff.mjs)
+/staff.csv
+/staff-credentials.csv

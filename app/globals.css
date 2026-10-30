@@ -134,6 +134,8 @@ em { color: var(--orange); font-style: italic; }
 .nav.isSolid .navActions .button { min-height: 44px; }
 .navTicket { display: inline-flex; align-items: center; gap: 7px; font: 600 12px var(--ui); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; opacity: .86; transition: opacity .2s, color .2s; }
 .navTicket:hover { opacity: 1; color: var(--lime); }
+/* Narrow laptops: Help and Find ticket shrink to icons so the bar keeps to one line. */
+@media (max-width: 1240px) { .navTicket span { display: none; } }
 
 .menu { display: none; padding: 8px; color: #fff; }
 .mobileNav { display: none; }

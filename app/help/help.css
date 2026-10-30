@@ -1,0 +1,23 @@
+/* Help page: the find-ticket form style, plus a select, a textarea and field errors. */
+.helpForm { gap: 22px; }
+.helpForm select, .helpForm textarea { width: 100%; margin-top: 8px; border-bottom: 1px solid #9fa39d; outline: none; background: transparent; color: var(--ink); font: 500 16px var(--display); letter-spacing: 0; text-transform: none; transition: border-color .2s, box-shadow .2s; }
+.helpForm select { height: 50px; padding: 0 2px; cursor: pointer; }
+.helpForm textarea { min-height: 120px; padding: 10px 2px; line-height: 1.5; resize: vertical; }
+.helpForm select:hover, .helpForm select:focus, .helpForm textarea:hover, .helpForm textarea:focus { border-color: var(--ink); }
+.helpForm select:focus, .helpForm textarea:focus { box-shadow: 0 2px 0 var(--orange); }
+.helpForm [aria-invalid='true'] { border-color: #c72e12; }
+.helpFieldError { display: block; margin-top: 6px; color: #c72e12; font: 500 13px var(--display); letter-spacing: 0; text-transform: none; }
+.helpOptional { color: #8a8f88; font-weight: 500; letter-spacing: .02em; text-transform: none; }
+.helpPair { display: grid; gap: 22px; grid-template-columns: 1fr 1fr; }
+.helpTrap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.helpContact { margin-top: 28px; color: #5f655f; font-size: 14px; line-height: 1.6; }
+.helpContact a { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+.helpDone { display: grid; padding: 26px 24px; gap: 10px; border-left: 4px solid var(--lime); background: #fff; box-shadow: 0 6px 18px rgba(16, 22, 19, .08); }
+.helpDone svg { color: #1f7a3a; }
+.helpDone h2 { font-size: 1.8rem; letter-spacing: -.04em; }
+.helpDone p { color: #3d433e; font-size: 15px; line-height: 1.55; }
+
+@media (max-width: 520px) {
+  .helpPair { grid-template-columns: 1fr; }
+}

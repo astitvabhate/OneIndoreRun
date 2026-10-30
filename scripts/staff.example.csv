@@ -1,0 +1,10 @@
+# Copy to staff.csv in the project root, fill in, then run: npm run staff:add
+# role: admin (organisers: dashboard, edits, import, check-in) or volunteer (kit check-in only)
+# password: leave empty to have one generated; at least 10 characters if you set it yourself
+# active: optional; "no" switches an account off
+username,name,role,password,active
+astitva,Astitva Bhate,admin,,
+priya.sharma,Priya Sharma,admin,,
+ravi.verma,Ravi Verma,volunteer,,
+neha.jain,Neha Jain,volunteer,,
+expo.desk1,Expo Desk 1,volunteer,,

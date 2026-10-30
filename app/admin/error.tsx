@@ -6,7 +6,7 @@ import { logout } from './actions';
 // Shown when an admin page can't load its data (e.g. the database is down or not set up yet).
 export default function AdminError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <main className="adminLogin">
+    <main className="adminLogin adminErrorPage">
       <div className="adminLoginCard">
         <h1><CircleAlert size={22} /> Couldn&apos;t load this page</h1>
         <p className="adminError" role="alert">

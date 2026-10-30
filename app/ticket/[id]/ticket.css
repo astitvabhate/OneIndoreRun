@@ -1,7 +1,12 @@
 /* Ticket page: shown to runners and to expo volunteers who scan the QR code. */
 .ticketPage { min-height: 100vh; background: var(--paper); }
-.ticketPage .regNav { display: flex; height: 74px; padding: 0 max(20px, 7vw); align-items: center; justify-content: space-between; background: var(--ink); color: #fff; }
-.ticketPage .regNav .logo { width: 130px; height: 60px; }
+/* Same size as the home page's solid (scrolled) navbar and its logo. */
+.ticketPage .regNav { display: flex; height: 90px; padding: 0 max(24px, 5vw); align-items: center; justify-content: space-between; background: var(--ink); color: #fff; }
+.ticketPage .regNav .logo { width: 166px; height: 78px; }
+@media (max-width: 750px) {
+  .ticketPage .regNav { padding-inline: 22px; }
+  .ticketPage .regNav .logo { width: 94px; height: 72px; }
+}
 .ticketPage .back { display: flex; align-items: center; gap: 8px; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
 
 .ticket { max-width: 480px; margin: 40px auto 60px; overflow: hidden; background: #fff; box-shadow: 0 18px 44px rgba(16, 22, 19, .12); }
@@ -39,12 +44,34 @@
   .staffCheckinLink { margin: 0; }
 }
 
-/* Find my ticket */
-.findForm { display: grid; margin-top: 22px; gap: 16px; }
-.findForm label { display: grid; gap: 6px; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
-.findForm input { padding: 12px 14px; border: 1px solid var(--line); background: #fff; font: 500 16px var(--display); letter-spacing: 0; text-transform: none; }
-.findResults { display: grid; margin-top: 22px; gap: 10px; list-style: none; }
-.findResults a { display: flex; padding: 14px 16px; align-items: center; gap: 12px; border: 1px solid var(--line); background: var(--paper); }
-.findResults span { display: grid; gap: 3px; }
-.findResults small { color: #5f655f; font-size: 13px; }
-.findError { margin-top: 18px; padding: 12px 14px; border-left: 3px solid #c72e12; background: var(--paper); color: #8f1f0a; font-size: 14px; line-height: 1.5; }
+/* Find my ticket: banner and fields styled like the register page. */
+.findHero { padding: 70px var(--gutter) 56px; background: var(--sage); }
+.findHero h1 { margin: 15px 0 18px; font-size: clamp(3.4rem, 8vw, 7rem); line-height: .9; letter-spacing: -.06em; }
+.findHero > p:not(.eyebrow) { max-width: 520px; font-size: 16px; line-height: 1.5; }
+.findHeroLink { margin-top: 14px; font-size: 14px !important; }
+.findHeroLink a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+.findBody { max-width: 560px; margin: auto; padding: 50px var(--gutter) 70px; box-sizing: content-box; }
+.findForm { display: grid; gap: 26px; }
+.findForm label { display: block; color: #3d433e; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+.findForm input { width: 100%; height: 50px; margin-top: 8px; padding: 0 2px; border-bottom: 1px solid #9fa39d; outline: none; background: transparent; color: var(--ink); font: 500 16px var(--display); letter-spacing: 0; text-transform: none; transition: border-color .2s, box-shadow .2s; }
+.findForm input:hover, .findForm input:focus { border-color: var(--ink); }
+.findForm input:focus { box-shadow: 0 2px 0 var(--orange); }
+.findForm input[type='date'] { cursor: pointer; }
+.findForm .button { width: 100%; min-height: 58px; margin-top: 6px; }
+.findForm .button:disabled { cursor: wait; opacity: .6; transform: none; }
+
+.findError { margin-top: 24px; padding: 14px 16px; background: #c72e12; color: #fff; font: 600 15px/1.5 var(--display); }
+.findResults { display: grid; margin-top: 28px; gap: 10px; list-style: none; }
+.findResults a { display: flex; padding: 16px 18px; align-items: center; gap: 14px; border-left: 4px solid var(--lime); background: #fff; box-shadow: 0 6px 18px rgba(16, 22, 19, .08); transition: transform .2s; }
+.findResults a:hover { transform: translateY(-2px); }
+.findResults span { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.findResults b { font-size: 17px; overflow-wrap: anywhere; }
+.findResults small { color: #5f655f; font: 600 12px var(--ui); letter-spacing: .04em; text-transform: uppercase; }
+
+@media (max-width: 520px) {
+  .findHero { padding: 34px 20px 30px; }
+  .findHero h1 { margin: 10px 0 14px; font-size: clamp(2.8rem, 14vw, 3.6rem); }
+  .findHero > p:not(.eyebrow) { font-size: 15px; }
+  .findBody { padding: 36px 20px 56px; }
+}

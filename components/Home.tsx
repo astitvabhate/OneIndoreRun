@@ -4,7 +4,6 @@ import { ExpoSection } from './sections/ExpoSection';
 import { FaqSection } from './sections/FaqSection';
 import { FinalCallToAction } from './sections/FinalCallToAction';
 import { FinisherSection } from './sections/FinisherSection';
-import { Footer } from './sections/Footer';
 import { GallerySection } from './sections/GallerySection';
 import { HeroSection } from './sections/HeroSection';
 import { IndoreSection } from './sections/IndoreSection';
@@ -34,7 +33,6 @@ export function Home() {
         <FaqSection />
         <FinalCallToAction />
       </main>
-      <Footer />
     </>
   );
 }

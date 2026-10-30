@@ -16,14 +16,17 @@ export default function FindTicketPage() {
         <Link href="/" className="back"><ArrowLeft size={16} /> Back to home</Link>
       </header>
 
-      <article className="ticket">
-        <div className="ticketBody">
-          <span className="ticketLabel">Lost your ticket?</span>
-          <h1>Find my ticket</h1>
-          <p className="ticketNote">Enter the mobile number and date of birth you used when registering. We&apos;ll show every paid registration that matches.</p>
-          <FindTicketForm />
-        </div>
-      </article>
+      {/* Same banner and form style as the register page. */}
+      <section className="findHero">
+        <p className="eyebrow dark">Lost your ticket?</p>
+        <h1>FIND YOUR<br /><em>TICKET.</em></h1>
+        <p>Enter the mobile number and date of birth you registered with. We&apos;ll show every paid registration that matches.</p>
+        <p className="findHeroLink">Not registered yet? <Link href="/register">Register now</Link></p>
+      </section>
+
+      <div className="findBody">
+        <FindTicketForm />
+      </div>
     </main>
   );
 }

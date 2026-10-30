@@ -76,7 +76,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
           ) : (
             <p className="ticketNote">{cancelled ? 'This registration was cancelled by the organisers.' : 'This registration has not been paid, so it does not include a race kit.'}</p>
           )}
-          <p className="ticketNote">Bring this ticket and a photo ID to the Race Expo to collect your kit. Keep this page private — anyone with the link can see it.</p>
+          <p className="ticketNote">Bring this ticket and a photo ID to the Race Expo to collect your kit.</p>
         </div>
       </article>
     </main>

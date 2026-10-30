@@ -42,7 +42,7 @@ export default async function RunnerPage({ params, searchParams }: { params: Pro
         <h1>{fullName(row)}</h1>
         <p>
           <span className="mono">{regNoLabel(row)}</span> · {raceLabel(row)} · T-shirt {row.tshirt_size} · age {ageOnRaceDay(row.date_of_birth)} on race day ·{' '}
-          <span className={row.status === 'paid' ? 'pill paid' : row.status === 'cancelled' ? 'pill cancelled' : 'pill'}>{statusLabel}</span>
+          <span className={`pill ${row.status}`}>{statusLabel}</span>
         </p>
         {row.status !== 'pending' && (
           <a href={`/ticket/${row.id}`} target="_blank" rel="noopener" className="adminIconLink"><Ticket size={16} /> Open ticket</a>

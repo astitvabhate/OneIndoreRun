@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   }
   if (registration.status === 'cancelled') {
     return NextResponse.json(
-      { error: 'cancelled', message: `This registration for the ${race} run was cancelled by the organisers. Please contact them if you'd like to rejoin.` },
+      { error: 'cancelled', message: `This registration for the ${race} run was cancelled by the organisers. Please contact them on ${event.contact.phone} or ${event.contact.email} if you'd like to rejoin.` },
       { status: 409 },
     );
   }

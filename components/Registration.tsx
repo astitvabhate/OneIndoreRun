@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useForm, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight, Check, Download, Info, LoaderCircle, PartyPopper
 import { Logo } from './Logo';
 import { ageReferenceDate, event, findRace, formatDate, formatDateParts, formatFee, type RaceSlug } from '../lib/eventData';
 import { openCheckout, postJson, verifyPayment, type CheckoutOrder, type VerifiedPayment } from '../lib/payment';
-import { ageOnRaceDay, registrationSchema, type RegistrationInput } from '../lib/registrationSchema';
+import { ageOnRaceDay, crossFieldIssues, registrationSchema, type RegistrationInput } from '../lib/registrationSchema';
 
 type Form = RegistrationInput;
 type Field = keyof Form;
@@ -26,7 +26,7 @@ const steps = [
   ['consent', 'Consent'],
 ] as const;
 
-// What each step checks before phones move on to the next one (same order as `steps`).
+// What each step checks before moving on to the next one (same order as `steps`).
 const stepFields: Field[][] = [
   ['firstName', 'middleName', 'lastName', 'mobile', 'email', 'city', 'address', 'pincode', 'dateOfBirth', 'gender', 'bloodGroup', 'occupation', 'occupationOther'],
   ['category'],
@@ -34,9 +34,6 @@ const stepFields: Field[][] = [
   ['emergencyName', 'emergencyMobile'],
   ['consentRisk', 'consentRules', 'consentMedia'],
 ];
-
-// Phones fill the form one step at a time and finish on the full summary instead of the review.
-const mobileQuery = '(max-width: 850px)';
 
 const consents: [Field, string][] = [
   ['consentRisk', 'I understand that I am participating in this event at my own risk. The organizers are not responsible for any injury or loss.'],
@@ -48,8 +45,8 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
   const [stage, setStage] = useState<Stage>('form');
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<CheckoutError>();
-  const setPaymentError = (message: string, ticketId?: string) => {
-    setCheckoutError({ message, ticketId });
+  const setPaymentError = (error: CheckoutError) => {
+    setCheckoutError(error);
     // The message shows at the very top of the page, above the banner.
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -57,8 +54,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
   const [busy, setBusy] = useState<Busy>();
   const [step, setStep] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
-  const isMobile = useMediaQuery(mobileQuery);
-  const { register, handleSubmit, trigger, control, getValues, formState: { errors } } = useForm<Form>({
+  const { register, handleSubmit, trigger, setError, control, getValues, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { category: initialCategory },
   });
@@ -91,13 +87,17 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
 
   const nextStep = async () => {
     if (!(await trigger(stepFields[step], { shouldFocus: true }))) return;
+    const issues = crossFieldIssues(getValues()).filter(([name]) => stepFields[step].includes(name));
+    if (issues.length) {
+      issues.forEach(([name, message], index) => setError(name, { type: 'custom', message }, { shouldFocus: index === 0 }));
+      return;
+    }
     if (step === steps.length - 1) return toSummary();
     showStep(step + 1);
   };
 
   const onSubmit = (formEvent: React.FormEvent<HTMLFormElement>) => {
-    if (!isMobile) return toSummary(formEvent);
-    // Enter on a phone keyboard moves to the next step rather than validating steps not yet shown.
+    // Enter moves to the next step rather than validating steps not yet shown.
     formEvent.preventDefault();
     void nextStep();
   };
@@ -112,7 +112,9 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
       const response = await postJson('/api/register', values);
       const body = await response.json().catch(() => ({}));
       if (body.error === 'not_open') return goTo('notOpen');
-      if (!response.ok) return setPaymentError(body.message ?? 'We could not start your registration. Please try again in a moment.', body.ticketId);
+      if (!response.ok) {
+        return setPaymentError({ message: body.message ?? 'We could not start your registration. Please try again in a moment.', ticketId: body.ticketId });
+      }
 
       const name = [values.firstName, values.lastName].join(' ');
       setBusy(undefined); // Razorpay shows its own window from here
@@ -121,20 +123,24 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
         // A short pause so the runner sees the window closed for a reason, not a sudden jump.
         setBusy('checking');
         await new Promise((resolve) => setTimeout(resolve, 1200));
-        if (result.status === 'dismissed') return setPaymentError('Payment was cancelled. Your spot is not confirmed until you pay.');
-        return setPaymentError(`${result.reason} No money was taken; please try again.`);
+        if (result.status === 'dismissed') {
+          return setPaymentError({ message: "Payment not completed. You closed the payment window before paying, so no money was taken and your spot isn't booked yet. Tap Proceed to payment when you're ready." });
+        }
+        return setPaymentError({ message: `${result.reason.replace(/[.!]?$/, '.')} No money was taken. Please try again, or use a different UPI app, card or bank.` });
       }
 
       setBusy('confirming');
       const verified = await verifyPayment(result.response);
-      if (verified.status === 'rejected') return setPaymentError(verified.message);
+      if (verified.status === 'rejected') return setPaymentError({ message: verified.message });
       if (verified.status === 'unconfirmed') {
-        return setPaymentError(`Your payment went through (ID ${result.response.razorpay_payment_id}) but we could not confirm it here yet. Please don't pay again: in a few minutes, use "Find my ticket" with your mobile number and date of birth. Keep this ID in case you need to contact the organisers.`);
+        return setPaymentError({
+          message: `Your payment went through (ID ${result.response.razorpay_payment_id}) but we could not confirm it here yet. Please don't pay again: in a few minutes, use "Find my ticket" with your mobile number and date of birth. Keep this ID in case you need to contact the organisers on ${event.contact.phone} or ${event.contact.email}.`,
+        });
       }
       setConfirmation(verified.payment);
       goTo('done');
     } catch {
-      setPaymentError('Something went wrong. Please check your connection and try again.');
+      setPaymentError({ message: 'Something went wrong. Please check your internet connection and try again.' });
     } finally {
       setSubmitting(false);
       setBusy(undefined);
@@ -152,24 +158,15 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
       {stage === 'done' && confirmation && (
         <p className="payAlert success" role="status">Payment successful.<br />Your registration {confirmation.regNo} is confirmed.</p>
       )}
-      {/* Green once payment is confirmed, red while the last payment attempt failed or was cancelled. */}
+      {/* Green once payment is confirmed, red when it didn't go through. */}
       <section className={`regHero${stage === 'done' ? ' paid' : checkoutError ? ' unpaid' : ''}`}>
         <p className="eyebrow dark">One Indore Run Indore 2.0</p>
         <h1>SECURE YOUR<br /><em>SPOT.</em></h1>
-        <p>Choose your run. Show up. Run Indore.</p>
         <p className="findTicketLink">Already registered? <Link href="/ticket/find">Find your ticket</Link></p>
       </section>
 
-      <nav className="progress" aria-label="Registration steps">
-        {steps.map(([id, label], index) => (
-          <a key={id} href={stage === 'form' ? `#${id}` : undefined} className={stage === 'form' ? '' : 'done'}>
-            <b>{stage === 'form' ? `0${index + 1}` : <Check size={13} />}</b>{label}
-          </a>
-        ))}
-        <span className={stage === 'form' ? '' : 'current'} aria-current={stage === 'form' ? undefined : 'step'}><b>06</b>Review</span>
-      </nav>
-
-      <div className="regLayout">
+      {/* The sidebar recap sits beside the form and the summary; the payment result takes the full column. */}
+      <div className={`regLayout${stage === 'form' || stage === 'review' ? '' : ' single'}`}>
         <form ref={formRef} onSubmit={onSubmit} className="formFields" noValidate hidden={stage !== 'form'}>
           <div className="stepBar" role="progressbar" aria-label="Registration progress" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={step + 1}>
             <span>Step {step + 1} of {steps.length}</span>
@@ -250,7 +247,6 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
             <FieldError message={consents.some(([name]) => errors[name]) ? 'Please accept all three acknowledgements to continue.' : undefined} />
           </section>
 
-          <button className="button formSubmit" type="submit">Review registration <ArrowRight size={17} /></button>
           <div className="stepNav">
             {step > 0 && <button type="button" className="button outline" onClick={() => showStep(step - 1)} aria-label="Previous step"><ArrowLeft size={17} /></button>}
             <button type="button" className="button" onClick={nextStep}>
@@ -259,13 +255,11 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
           </div>
         </form>
 
-        {stage === 'review' && (isMobile
-          ? <RunSummary values={getValues()} onEdit={showStep} onConfirm={confirm} submitting={submitting} />
-          : <Review values={getValues()} onEdit={() => goTo('form')} onConfirm={confirm} submitting={submitting} />)}
+        {stage === 'review' && <RunSummary values={getValues()} onEdit={showStep} onConfirm={confirm} submitting={submitting} />}
         {stage === 'notOpen' && <NotOpen onEdit={() => goTo('form')} />}
         {stage === 'done' && confirmation && <Done confirmation={confirmation} />}
 
-        <Summary control={control} />
+        {(stage === 'form' || stage === 'review') && <Summary control={control} />}
       </div>
       {busy && <PaymentLoader busy={busy} />}
     </main>
@@ -274,17 +268,6 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-function useMediaQuery(query: string) {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const update = () => setMatches(media.matches);
-    update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, [query]);
-  return matches;
-}
 
 /** Tells runners which age counts, since race day may not be announced yet. */
 function ageHint(age: number) {
@@ -370,30 +353,9 @@ function summaryGroups(values: Form): [string, number, SummaryRow[]][] {
   ];
 }
 
-function Review({ values, onEdit, onConfirm, submitting }: { values: Form; onEdit: () => void; onConfirm: () => void; submitting: boolean }) {
-  const rows = summaryGroups(values).flatMap(([, , groupRows]) => groupRows);
-
-  return (
-    <section className="review" aria-labelledby="review-title">
-      <p className="eyebrow dark">06 / Review</p>
-      <h2 id="review-title">CHECK YOUR<br />DETAILS.</h2>
-      <p className="formIntro">Make sure everything is correct. Your bib and certificate will use this name.</p>
-      <dl>
-        {rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
-      </dl>
-      <div className="reviewActions">
-        <button type="button" className="button outline" onClick={onEdit} disabled={submitting}><PencilLine size={16} /> Edit details</button>
-        <button type="button" className="button" onClick={onConfirm} disabled={submitting}>
-          {submitting ? 'Please wait…' : <>Proceed to payment · {formatFee()} <ArrowRight size={17} /></>}
-        </button>
-      </div>
-    </section>
-  );
-}
-
 const [kitStart, kitEnd] = event.expoDays;
 
-/** Phone replacement for the review: everything the runner entered, the event dates and the kit, with an edit link per step. */
+/** The last step: everything the runner entered, the event dates and the kit, with an edit link per step. */
 function RunSummary({ values, onEdit, onConfirm, submitting }: { values: Form; onEdit: (step: number) => void; onConfirm: () => void; submitting: boolean }) {
   const eventRows: SummaryRow[] = [
     ['Race day', event.raceDate ? formatDate(event.raceDate) : 'To be announced'],
@@ -493,7 +455,7 @@ function Done({ confirmation }: { confirmation: Confirmation }) {
         {confirmation.race && <small>{confirmation.race} run</small>}
       </div>
       {confirmation.duplicatePayment && (
-        <p className="paymentError" role="alert">You had already paid for this registration in another window, so this second payment will be refunded. Please share your payment ID with the organisers if it isn&apos;t back within 7 days.</p>
+        <p className="paymentError" role="alert">You had already paid for this registration in another window, so this second payment will be refunded. Please share your payment ID with the organisers ({event.contact.phone} or {event.contact.email}) if it isn&apos;t back within 7 days.</p>
       )}
       <p>Download your digital ticket now. Show its QR code with a photo ID at the Race Expo on <strong>{event.expoDates}</strong> to collect your kit and bib.</p>
       <div className="reviewActions">

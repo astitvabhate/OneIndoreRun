@@ -1,4 +1,5 @@
 import { Logo } from '../Logo';
+import { event } from '../../lib/eventData';
 
 const quickLinks = [
   ['Races', '/#races'],
@@ -13,7 +14,11 @@ export function Footer() {
       <div className="footerTop">
         <div className="footerBrand">
           <Logo />
-          <p>Indore, Madhya Pradesh<br />Email &amp; phone: To be announced</p>
+          <p>
+            Indore, Madhya Pradesh<br />
+            <a href={`tel:+91${event.contact.phone}`}>+91 {event.contact.phone}</a><br />
+            <a href={`mailto:${event.contact.email}`}>{event.contact.email}</a>
+          </p>
         </div>
         <nav aria-label="Footer" className="footerLinks">
           {quickLinks.map(([label, href]) => <a key={href} href={href}>{label}</a>)}

@@ -419,6 +419,8 @@ footer { padding: 60px var(--gutter) 28px; border-top: 1px solid var(--line-dark
 /* Box matches the logo's aspect ratio so it sits flush left instead of floating in a wide box. */
 .footerTop .logo { width: 200px; height: 150px; }
 .footerTop p { max-width: 260px; color: #a4aaa4; font-size: 13px; line-height: 1.7; }
+.footerTop p a { color: #cfd4cd; overflow-wrap: anywhere; }
+.footerTop p a:hover { color: var(--lime); }
 .footerLinks { display: flex; flex-wrap: wrap; gap: 26px; font: 600 12px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
 .footerLinks a { color: #cfd4cd; }
 .footerLinks a:hover { color: var(--lime); }

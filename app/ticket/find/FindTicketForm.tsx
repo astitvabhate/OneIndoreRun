@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { Search, Ticket } from 'lucide-react';
+import { ArrowRight, Search, Ticket } from 'lucide-react';
 import { findMyTicket } from './actions';
 
 export function FindTicketForm() {
@@ -16,7 +16,7 @@ export function FindTicketForm() {
         </label>
         <label>
           Date of birth
-          <input name="dateOfBirth" type="date" min="1920-01-01" autoComplete="bday" required />
+          <input name="dateOfBirth" type="date" min="1920-01-01" max={new Date().toISOString().slice(0, 10)} autoComplete="bday" required />
         </label>
         <button className="button" type="submit" disabled={pending}>
           {pending ? 'Searching…' : <><Search size={17} /> Find my ticket</>}
@@ -31,6 +31,7 @@ export function FindTicketForm() {
               <a href={`/ticket/${ticket.id}`}>
                 <Ticket size={18} />
                 <span><b>{ticket.name}</b><small>{ticket.regNo} · {ticket.race}{ticket.cancelled && ' · cancelled'}</small></span>
+                <ArrowRight size={18} />
               </a>
             </li>
           ))}

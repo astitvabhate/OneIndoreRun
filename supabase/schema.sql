@@ -47,7 +47,7 @@ create table public.runners (
   pincode text not null,
   emergency_name text not null,
   emergency_mobile text not null,
-  guardian_name text,                     -- required for under-18s, checked by the website
+  guardian_name text,                     -- optional; the website no longer asks for it (emergency contact covers under-18s)
   guardian_mobile text,
   search_text text generated always as (lower(
     first_name || ' ' || coalesce(middle_name || ' ', '') || last_name || ' ' || mobile || ' ' || email || ' ' || city

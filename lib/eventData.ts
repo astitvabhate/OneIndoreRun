@@ -35,6 +35,7 @@ export const event = {
   registrationClosesAt,
   fee,
   minAge: 12,
+  contact: { phone: '9826681460', email: 'info@oneindorerunindore.com' },
   expoDates: '27 & 28 November 2026',
   expoDays: [expoStartDate, expoEndDate] as const,
   kitCollectionHours,

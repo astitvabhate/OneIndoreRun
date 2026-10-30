@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Inter } from 'next/font/google';
 import './globals.css';
+import { SiteFooter } from '../components/SiteFooter';
 
 // Self-hosted, preloaded fonts. CSS reads them through --font-display and --font-ui.
 const display = DM_Sans({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {/* Without JavaScript, scroll-reveal content would stay hidden. */}
         <noscript><style>{'.reveal{opacity:1!important;transform:none!important}'}</style></noscript>
         {children}
+        <SiteFooter />
       </body>
     </html>
   );

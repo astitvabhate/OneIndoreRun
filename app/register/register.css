@@ -12,26 +12,6 @@
 .regHero h1 { margin: 15px 0; font-size: clamp(4rem, 9vw, 9rem); line-height: .9; letter-spacing: -.06em; }
 .regHero > p:last-child { font-size: 16px; }
 
-/* Step strip stays visible while scrolling through the form. */
-.progress {
-  position: sticky;
-  z-index: 10;
-  top: 0;
-  display: flex;
-  padding: 18px var(--gutter);
-  gap: 10px;
-  justify-content: space-between;
-  border-bottom: 1px solid #d5d7d1;
-  background: rgba(255, 255, 255, .96);
-  backdrop-filter: blur(8px);
-}
-.progress a, .progress span { display: flex; align-items: center; gap: 7px; color: #6b716b; font: 600 11px var(--ui); letter-spacing: .05em; text-transform: uppercase; }
-.progress a[href]:hover { color: var(--ink); }
-.progress b { display: grid; min-width: 22px; height: 22px; place-items: center; color: var(--orange); }
-.progress .done b { border-radius: 50%; background: var(--ink); color: var(--lime); }
-.progress .current { color: var(--ink); }
-.progress .current b { border-radius: 50%; background: var(--orange); color: #fff; }
-
 .regLayout {
   display: grid;
   max-width: 1300px;
@@ -45,7 +25,20 @@
 /* Form ---------------------------------------------------------------------- */
 
 .formFields, .review { min-width: 0; }
-.formFields section { margin-bottom: 60px; padding-bottom: 65px; border-bottom: 1px solid var(--line); scroll-margin-top: 80px; }
+/* One step at a time: only the current section shows, sliding in, with a progress bar above and Back / Next below. */
+@keyframes stepIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+.formFields section { margin-bottom: 36px; animation: stepIn .35s ease both; }
+.formFields section:not(.current) { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .formFields section { animation: none; }
+}
+.stepBar { margin-bottom: 32px; }
+.stepBar span { color: #6b716b; font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; }
+.stepBar i { display: block; height: 4px; margin-top: 8px; background: #e0e3db; }
+.stepBar b { display: block; height: 100%; background: var(--orange); transition: width .35s ease; }
+.stepNav { display: flex; gap: 10px; }
+.stepNav .button { flex: 1; min-height: 58px; }
+.stepNav .button.outline { flex: none; width: 58px; padding: 0; }
 .formFields h2, .review h2 { margin: 17px 0 32px; font-size: clamp(2.6rem, 5vw, 4.6rem); }
 
 .formGrid { display: grid; gap: 24px 18px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -100,8 +93,6 @@
 .consents label.invalid { border-color: #c72e12; }
 .consents input { width: 20px; min-width: 20px; height: 20px; margin-top: 1px; accent-color: var(--orange); }
 
-.formSubmit { width: 100%; min-height: 60px; font-size: 13px; }
-.stepNav, .stepBar { display: none; }
 
 /* Review and notice ----------------------------------------------------------- */
 
@@ -129,29 +120,18 @@
 .summaryTitle { margin: 25px 0 12px; color: var(--lime); font: 600 10px var(--ui); letter-spacing: .12em; }
 .summary .tick { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.85; }
 .tick svg { flex: none; color: var(--lime); }
-.pending { display: flex; margin-top: 22px; gap: 7px; color: #b2b8b0; font-size: 12px; line-height: 1.5; }
-.pending svg { flex: none; margin-top: 2px; }
+.reg .pending { display: flex; margin-top: 22px; gap: 7px; color: #b2b8b0; font-size: 12px; line-height: 1.5; }
+.reg .pending svg { flex: none; margin-top: 2px; }
 
 /* Responsive ------------------------------------------------------------------ */
 
-/* On tablets and phones the form shows one step at a time with Back / Next, and the full
-   summary (RunSummary) at the end replaces both the step strip and the sidebar recap. */
-@keyframes stepIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+/* Without the sidebar (summary, payment result) the content gets one centred column. */
+.regLayout.single { grid-template-columns: minmax(0, 820px); justify-content: center; }
+
+/* On tablets and phones the sidebar recap is dropped; the summary at the end covers it. */
 @media (max-width: 850px) {
   .regLayout { padding-top: 50px; grid-template-columns: minmax(0, 1fr); }
-  .progress, .summary, .formSubmit { display: none; }
-  .regLayout .formFields section { margin-bottom: 32px; padding-bottom: 0; border-bottom: 0; animation: stepIn .35s ease both; }
-  .regLayout .formFields section:not(.current) { display: none; }
-  .stepBar { display: block; margin-bottom: 28px; }
-  .stepBar span { color: #6b716b; font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; }
-  .stepBar i { display: block; height: 4px; margin-top: 8px; background: #e0e3db; }
-  .stepBar b { display: block; height: 100%; background: var(--orange); transition: width .35s ease; }
-  .stepNav { display: flex; gap: 10px; }
-  .stepNav .button { flex: 1; min-height: 58px; }
-  .stepNav .button.outline { flex: none; width: 58px; padding: 0; }
-}
-@media (max-width: 850px) and (prefers-reduced-motion: reduce) {
-  .regLayout .formFields section { animation: none; }
+  .summary { display: none; }
 }
 
 @media (max-width: 500px) {
@@ -201,13 +181,19 @@
 .summaryGroup h3 { font: 800 1.1rem var(--display); letter-spacing: -.02em; text-transform: uppercase; }
 .editLink { display: inline-flex; padding: 6px 0; align-items: center; gap: 6px; color: var(--orange); font: 700 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
 .runSummary dl { border-top: 0; }
-.runSummary dl div { padding: 11px 0; gap: 12px; grid-template-columns: 110px minmax(0, 1fr); }
+.runSummary dl div { padding: 11px 0; gap: 12px; grid-template-columns: minmax(110px, 26%) minmax(0, 1fr); }
 .runSummary dt { line-height: 1.6; }
 .runSummary dd { font-size: 15px; }
 .kitCard { padding: 22px; background: var(--ink); color: #f1f3ec; }
-/* The pay button is fixed to the bottom of the screen; the summary leaves room for it at the end. */
-.runSummary { padding-bottom: 40px; }
-.runSummary .reviewActions { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; margin: 0; padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom)); background: var(--paper); box-shadow: 0 -8px 20px rgba(16, 22, 19, .08); }
+/* Desktop lays the summary out like the form: details on the left, the sidebar recap (with the kit) on the right. */
+@media (min-width: 851px) {
+  .runSummary .kitCard { display: none; }
+}
+/* Phones fix the pay button to the bottom of the screen; the summary leaves room for it at the end. */
+@media (max-width: 850px) {
+  .runSummary { padding-bottom: 40px; }
+  .runSummary .reviewActions { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; margin: 0; padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom)); background: var(--paper); box-shadow: 0 -8px 20px rgba(16, 22, 19, .08); }
+}
 .kitCard .summaryTitle:first-child { margin-top: 0; }
 .kitCard .tick { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.85; }
 
@@ -215,3 +201,8 @@
 .payAlert { padding: 14px var(--gutter); background: #c72e12; color: #fff; font: 600 15px/1.5 var(--display); }
 .payAlert.success { background: #1f7a3a; }
 .payAlert a { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Keep the end of the site footer clear of the fixed pay bar on phones. */
+@media (max-width: 850px) {
+  .reg:has(.runSummary) + footer { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+}

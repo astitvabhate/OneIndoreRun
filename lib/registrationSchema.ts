@@ -40,15 +40,23 @@ export const registrationSchema = z
     consentMedia: z.literal(true, { errorMap: () => ({ message: 'Please accept this acknowledgement.' }) }),
   })
   .superRefine((data, ctx) => {
-    if (data.occupation === 'Other' && !data.occupationOther) {
-      ctx.addIssue({ code: 'custom', path: ['occupationOther'], message: 'Please tell us your occupation.' });
-    }
-    if (data.emergencyMobile === data.mobile) {
-      ctx.addIssue({ code: 'custom', path: ['emergencyMobile'], message: 'Please use a different number from your own.' });
-    }
+    for (const [path, message] of crossFieldIssues(data)) ctx.addIssue({ code: 'custom', path: [path], message });
   });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
+
+/**
+ * Rules that compare two fields. Zod only runs them once every field is valid, so the form also
+ * calls this directly at the step that owns each field instead of waiting for the final submit.
+ */
+export function crossFieldIssues(data: Partial<RegistrationInput>): [keyof RegistrationInput, string][] {
+  const issues: [keyof RegistrationInput, string][] = [];
+  if (data.occupation === 'Other' && !data.occupationOther?.trim()) issues.push(['occupationOther', 'Please tell us your occupation.']);
+  if (data.emergencyMobile?.trim() && data.emergencyMobile.trim() === data.mobile?.trim()) {
+    issues.push(['emergencyMobile', 'Please use a different number from your own.']);
+  }
+  return issues;
+}
 
 /** Human-friendly registration number shown to runners, e.g. OIRI-00042. */
 export const formatRegNo = (regNo: number) => `OIRI-${String(regNo).padStart(5, '0')}`;

@@ -1,5 +1,5 @@
 -- ⚠ Deletes ALL runners, registrations, payments, kit check-ins and history, and restarts
--- numbering at OIR-00001. Tables, races and functions stay as they are.
+-- numbering at OIRI-00001. Tables, races and functions stay as they are.
 -- Use once, just before opening registrations to the public, to clear out test entries.
 -- Never run this after real runners have registered.
 

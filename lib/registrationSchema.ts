@@ -30,6 +30,7 @@ export const registrationSchema = z
     occupationOther: optionalText,
     category: z.enum(['3km', '5km', '10km'], { message: 'Please select a race category.' }),
     tshirtSize: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL'], { message: 'Please select a T-shirt size.' }),
+    // No longer asked for (the emergency contact covers under-18s); still accepted if sent.
     guardianName: optionalText,
     guardianMobile: optionalText,
     emergencyName: z.string().trim().min(2, 'Please enter emergency contact name.').max(80),
@@ -42,14 +43,6 @@ export const registrationSchema = z
     if (data.occupation === 'Other' && !data.occupationOther) {
       ctx.addIssue({ code: 'custom', path: ['occupationOther'], message: 'Please tell us your occupation.' });
     }
-    if (ageOnRaceDay(data.dateOfBirth) < 18) {
-      if (!data.guardianName || data.guardianName.length < 2) {
-        ctx.addIssue({ code: 'custom', path: ['guardianName'], message: 'Participants under 18 need a parent or guardian.' });
-      }
-      if (!mobilePattern.test(data.guardianMobile ?? '')) {
-        ctx.addIssue({ code: 'custom', path: ['guardianMobile'], message: "Please enter the guardian's 10-digit mobile number." });
-      }
-    }
     if (data.emergencyMobile === data.mobile) {
       ctx.addIssue({ code: 'custom', path: ['emergencyMobile'], message: 'Please use a different number from your own.' });
     }
@@ -57,5 +50,5 @@ export const registrationSchema = z
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 
-/** Human-friendly registration number shown to runners, e.g. OIR-00042. */
-export const formatRegNo = (regNo: number) => `OIR-${String(regNo).padStart(5, '0')}`;
+/** Human-friendly registration number shown to runners, e.g. OIRI-00042. */
+export const formatRegNo = (regNo: number) => `OIRI-${String(regNo).padStart(5, '0')}`;

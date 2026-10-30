@@ -139,10 +139,10 @@ function ConfirmImport({ data, report, races, onCancel, onConfirm }: { data: For
       <div role="dialog" aria-modal="true" aria-labelledby="import-confirm-title">
         <button type="button" className="importModalClose" onClick={onCancel} aria-label="Close"><X size={18} /></button>
         <h2 id="import-confirm-title">Import {report.valid} runner{report.valid === 1 ? '' : 's'}?</h2>
-        <p>Each runner becomes a <b>paid</b> registration with the next OIR number and their own ticket.</p>
+        <p>Each runner becomes a <b>paid</b> registration with the next OIRI number and their own ticket.</p>
         <dl>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
         <p className="importModalWarn">
-          <TriangleAlert size={16} /> There is no bulk undo. A wrong import has to be cancelled runner by runner, and their OIR numbers stay used.
+          <TriangleAlert size={16} /> There is no bulk undo. A wrong import has to be cancelled runner by runner, and their OIRI numbers stay used.
         </p>
         <div className="importActions">
           <button type="button" className="button outline" onClick={onCancel}>Cancel</button>

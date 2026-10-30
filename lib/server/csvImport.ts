@@ -4,7 +4,7 @@ import { adminEditSchema, type AdminEdit } from './admin';
 import { db, markPaid, recordOrder, savePending } from './db';
 
 // Bulk entries from a spreadsheet, e.g. a school's list of students. Each valid row becomes a
-// paid registration with its own OIR number and ticket, exactly as if the runner had paid online,
+// paid registration with its own OIRI number and ticket, exactly as if the runner had paid online,
 // except the payment is recorded as collected offline (payment id "offline_…").
 
 export const maxImportRows = 2000;
@@ -273,7 +273,7 @@ const toInput = (edit: AdminEdit): RegistrationInput => ({
 
 type Outcome = { imported: Imported } | { already: RowProblem } | { problem: RowProblem };
 
-/** Saves one runner and records their offline payment, which gives them the next OIR number. */
+/** Saves one runner and records their offline payment, which gives them the next OIRI number. */
 async function importOne({ row, name, edit }: ParsedRow & { edit: AdminEdit }, defaults: ImportDefaults, fileName: string, by: string): Promise<Outcome> {
   const race = raceName(edit.category);
   const saved = await savePending(toInput(edit));

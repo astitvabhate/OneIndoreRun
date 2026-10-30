@@ -107,7 +107,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         <form className="adminFilters" method="get">
           <label className="adminSearch">
             <Search size={16} />
-            <input type="search" name="q" defaultValue={filters.q} placeholder="Name, mobile, email or OIR number" aria-label="Search" />
+            <input type="search" name="q" defaultValue={filters.q} placeholder="Name, mobile, email or OIRI number" aria-label="Search" />
           </label>
           <select name="race" defaultValue={filters.race} aria-label="Race">
             <option value="">All races</option>

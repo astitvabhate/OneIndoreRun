@@ -4,7 +4,7 @@
 --
 --   races            the runs on offer (3 KM, 5 KM, 10 KM)
 --   runners          one row per person: who they are and how to reach them
---   registrations    one row per runner per race: T-shirt, consents, status, OIR number
+--   registrations    one row per runner per race: T-shirt, consents, status, OIRI number
 --   payments         one row per Razorpay checkout attempt for a registration
 --   kit_collections  one row per kit handed over at the expo
 --   audit_log        every change made by organisers and volunteers
@@ -519,7 +519,7 @@ comment on column public.races.capacity is 'Most paid runners allowed. Empty = n
 comment on table public.runners is 'One row per person. Identified by mobile + date of birth + first name.';
 comment on table public.registrations is 'One row per runner per race. Retrying checkout reuses the row; the number is given on payment.';
 comment on column public.registrations.id is 'Also the ticket id in the runner''s QR code.';
-comment on column public.registrations.reg_no is 'Shown as OIR-00001. Given in payment order; empty until paid.';
+comment on column public.registrations.reg_no is 'Shown as OIRI-00001. Given in payment order; empty until paid.';
 comment on column public.registrations.status is 'pending: not paid yet · paid: confirmed · cancelled: by an organiser';
 comment on table public.payments is 'Every Razorpay checkout attempt. Lets a payment from an old checkout window find its registration.';
 comment on column public.payments.status is 'created: window opened · paid: this paid the registration · failed · refund_due: money taken that must go back (see refund_reason) · refunded';

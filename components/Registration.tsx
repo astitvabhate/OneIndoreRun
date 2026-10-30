@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useForm, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Check, Download, Info, LoaderCircle, PartyPopper, PencilLine, ShieldCheck } from 'lucide-react';
 import { Logo } from './Logo';
-import { ageReferenceDate, event, findRace, formatDate, formatFee, type RaceSlug } from '../lib/eventData';
+import { ageReferenceDate, event, findRace, formatDate, formatDateParts, formatFee, type RaceSlug } from '../lib/eventData';
 import { openCheckout, postJson, verifyPayment, type CheckoutOrder, type VerifiedPayment } from '../lib/payment';
 import { ageOnRaceDay, registrationSchema, type RegistrationInput } from '../lib/registrationSchema';
 
@@ -26,6 +26,18 @@ const steps = [
   ['consent', 'Consent'],
 ] as const;
 
+// What each step checks before phones move on to the next one (same order as `steps`).
+const stepFields: Field[][] = [
+  ['firstName', 'middleName', 'lastName', 'mobile', 'email', 'city', 'address', 'pincode', 'dateOfBirth', 'gender', 'bloodGroup', 'occupation', 'occupationOther'],
+  ['category'],
+  ['tshirtSize'],
+  ['emergencyName', 'emergencyMobile'],
+  ['consentRisk', 'consentRules', 'consentMedia'],
+];
+
+// Phones fill the form one step at a time and finish on the full summary instead of the review.
+const mobileQuery = '(max-width: 850px)';
+
 const consents: [Field, string][] = [
   ['consentRisk', 'I understand that I am participating in this event at my own risk. The organizers are not responsible for any injury or loss.'],
   ['consentRules', 'I agree to follow the event rules and safety instructions.'],
@@ -36,10 +48,17 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
   const [stage, setStage] = useState<Stage>('form');
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<CheckoutError>();
-  const setPaymentError = (message: string, ticketId?: string) => setCheckoutError({ message, ticketId });
+  const setPaymentError = (message: string, ticketId?: string) => {
+    setCheckoutError({ message, ticketId });
+    // The message shows at the very top of the page, above the banner.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const [confirmation, setConfirmation] = useState<Confirmation>();
   const [busy, setBusy] = useState<Busy>();
-  const { register, handleSubmit, control, getValues, formState: { errors } } = useForm<Form>({
+  const [step, setStep] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const isMobile = useMediaQuery(mobileQuery);
+  const { register, handleSubmit, trigger, control, getValues, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { category: initialCategory },
   });
@@ -53,6 +72,36 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
     setStage(next);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const showStep = (index: number) => {
+    setStage('form');
+    setStep(index);
+    // Waits a frame so the form is visible again when coming back from the summary.
+    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+
+  // Cross-field checks (e.g. emergency number same as your own) only run on the full form,
+  // so the final check can still fail on an earlier step: open the first one with an error.
+  const showFirstError = (formErrors: FieldErrors<Form>) => {
+    const index = stepFields.findIndex((fields) => fields.some((name) => formErrors[name]));
+    if (index >= 0) showStep(index);
+  };
+
+  const toSummary = handleSubmit(() => goTo('review'), showFirstError);
+
+  const nextStep = async () => {
+    if (!(await trigger(stepFields[step], { shouldFocus: true }))) return;
+    if (step === steps.length - 1) return toSummary();
+    showStep(step + 1);
+  };
+
+  const onSubmit = (formEvent: React.FormEvent<HTMLFormElement>) => {
+    if (!isMobile) return toSummary(formEvent);
+    // Enter on a phone keyboard moves to the next step rather than validating steps not yet shown.
+    formEvent.preventDefault();
+    void nextStep();
+  };
+  const current = (index: number) => (index === step ? 'current' : undefined);
 
   const confirm = async () => {
     setSubmitting(true);
@@ -99,7 +148,12 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
         <Link href="/" className="back"><ArrowLeft size={16} /> Back to home</Link>
       </header>
 
-      <section className="regHero">
+      <PaymentError error={checkoutError} />
+      {stage === 'done' && confirmation && (
+        <p className="payAlert success" role="status">Payment successful.<br />Your registration {confirmation.regNo} is confirmed.</p>
+      )}
+      {/* Green once payment is confirmed, red while the last payment attempt failed or was cancelled. */}
+      <section className={`regHero${stage === 'done' ? ' paid' : checkoutError ? ' unpaid' : ''}`}>
         <p className="eyebrow dark">One Indore Run Indore 2.0</p>
         <h1>SECURE YOUR<br /><em>SPOT.</em></h1>
         <p>Choose your run. Show up. Run Indore.</p>
@@ -116,8 +170,12 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
       </nav>
 
       <div className="regLayout">
-        <form onSubmit={handleSubmit(() => goTo('review'))} className="formFields" noValidate hidden={stage !== 'form'}>
-          <section id="participant">
+        <form ref={formRef} onSubmit={onSubmit} className="formFields" noValidate hidden={stage !== 'form'}>
+          <div className="stepBar" role="progressbar" aria-label="Registration progress" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={step + 1}>
+            <span>Step {step + 1} of {steps.length}</span>
+            <i><b style={{ width: `${((step + 1) / steps.length) * 100}%` }} /></i>
+          </div>
+          <section id="participant" className={current(0)}>
             <p className="eyebrow dark">01 / Participant</p>
             <h2>YOUR DETAILS.</h2>
             <div className="formGrid">
@@ -137,7 +195,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
             </div>
           </section>
 
-          <section id="run">
+          <section id="run" className={current(1)}>
             <p className="eyebrow dark">02 / Run</p>
             <h2>CHOOSE YOUR RUN.</h2>
             <div className="choiceGrid" role="radiogroup" aria-label="Race category">
@@ -151,7 +209,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
             <FieldError message={errors.category?.message} />
           </section>
 
-          <section id="tshirt">
+          <section id="tshirt" className={current(2)}>
             <p className="eyebrow dark">03 / T-shirt</p>
             <h2>YOUR SIZE.</h2>
             <div className="sizes" role="radiogroup" aria-label="T-shirt size">
@@ -165,7 +223,7 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
             <FieldError message={errors.tshirtSize?.message} />
           </section>
 
-          <section id="emergency">
+          <section id="emergency" className={current(3)}>
             <p className="eyebrow dark">04 / Emergency</p>
             <h2>EMERGENCY CONTACT.</h2>
             <p className="formIntro">Someone we can reach on race day who isn&apos;t running with you.</p>
@@ -174,17 +232,11 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
               <TextField name="emergencyMobile" label="Mobile number" type="tel" inputMode="numeric" maxLength={10} autoComplete="off" register={register} errors={errors} />
             </div>
             {isMinor && (
-              <div className="guardian">
-                <p className="guardianNote"><Info size={16} /> Participants under 18 must be accompanied by a parent or legal guardian on race day.</p>
-                <div className="formGrid">
-                  <TextField name="guardianName" label="Parent / guardian name" register={register} errors={errors} />
-                  <TextField name="guardianMobile" label="Parent / guardian mobile" type="tel" inputMode="numeric" maxLength={10} register={register} errors={errors} />
-                </div>
-              </div>
+              <p className="guardian guardianNote"><Info size={16} /> Participants under 18 must be accompanied by a parent or legal guardian on race day.</p>
             )}
           </section>
 
-          <section id="consent">
+          <section id="consent" className={current(4)}>
             <p className="eyebrow dark">05 / Consent</p>
             <h2>READY WHEN<br />YOU ARE.</h2>
             <div className="consents">
@@ -199,9 +251,17 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
           </section>
 
           <button className="button formSubmit" type="submit">Review registration <ArrowRight size={17} /></button>
+          <div className="stepNav">
+            {step > 0 && <button type="button" className="button outline" onClick={() => showStep(step - 1)} aria-label="Previous step"><ArrowLeft size={17} /></button>}
+            <button type="button" className="button" onClick={nextStep}>
+              {step === steps.length - 1 ? 'Continue' : 'Next'} <ArrowRight size={17} />
+            </button>
+          </div>
         </form>
 
-        {stage === 'review' && <Review values={getValues()} onEdit={() => goTo('form')} onConfirm={confirm} submitting={submitting} error={checkoutError} />}
+        {stage === 'review' && (isMobile
+          ? <RunSummary values={getValues()} onEdit={showStep} onConfirm={confirm} submitting={submitting} />
+          : <Review values={getValues()} onEdit={() => goTo('form')} onConfirm={confirm} submitting={submitting} />)}
         {stage === 'notOpen' && <NotOpen onEdit={() => goTo('form')} />}
         {stage === 'done' && confirmation && <Done confirmation={confirmation} />}
 
@@ -213,6 +273,18 @@ export function Registration({ initialCategory }: { initialCategory?: RaceSlug }
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, [query]);
+  return matches;
+}
 
 /** Tells runners which age counts, since race day may not be announced yet. */
 function ageHint(age: number) {
@@ -272,22 +344,34 @@ function Summary({ control }: { control: Control<Form> }) {
   );
 }
 
-function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form; onEdit: () => void; onConfirm: () => void; submitting: boolean; error?: CheckoutError }) {
+type SummaryRow = [string, React.ReactNode];
+
+/** The runner's answers grouped by the form step that collects them, so the summary can link back to each. */
+function summaryGroups(values: Form): [string, number, SummaryRow[]][] {
   const name = [values.firstName, values.middleName, values.lastName].filter(Boolean).join(' ');
-  const rows: [string, React.ReactNode][] = [
-    ['Name', name],
-    ['Mobile', values.mobile],
-    ['Email', values.email],
-    ['Address', `${values.address}, ${values.city} – ${values.pincode}`],
-    ['Date of birth', `${formatDate(values.dateOfBirth)} (age ${ageOnRaceDay(values.dateOfBirth)} on ${event.raceDate ? 'race day' : formatDate(ageReferenceDate())})`],
-    ['Gender', values.gender],
-    ['Blood group', values.bloodGroup || '—'],
-    ['Occupation', (values.occupation === 'Other' ? values.occupationOther : values.occupation) || '—'],
-    ['Race', findRace(values.category)?.distance],
-    ['T-shirt size', values.tshirtSize],
-    ['Emergency contact', `${values.emergencyName} · ${values.emergencyMobile}`],
+  return [
+    ['Your details', 0, [
+      ['Name', name],
+      ['Mobile', values.mobile],
+      ['Email', values.email],
+      ['Address', `${values.address}, ${values.city} – ${values.pincode}`],
+      ['Date of birth', `${formatDate(values.dateOfBirth)} (age ${ageOnRaceDay(values.dateOfBirth)} on ${event.raceDate ? 'race day' : formatDate(ageReferenceDate())})`],
+      ['Gender', values.gender],
+      ['Blood group', values.bloodGroup || '—'],
+      ['Occupation', (values.occupation === 'Other' ? values.occupationOther : values.occupation) || '—'],
+    ]],
+    ['Run & T-shirt', 1, [
+      ['Race', findRace(values.category)?.distance],
+      ['T-shirt size', values.tshirtSize],
+    ]],
+    ['Emergency contact', 3, [
+      ['Contact', `${values.emergencyName} · ${values.emergencyMobile}`],
+    ]],
   ];
-  if (values.guardianName) rows.push(['Parent / guardian', `${values.guardianName} · ${values.guardianMobile}`]);
+}
+
+function Review({ values, onEdit, onConfirm, submitting }: { values: Form; onEdit: () => void; onConfirm: () => void; submitting: boolean }) {
+  const rows = summaryGroups(values).flatMap(([, , groupRows]) => groupRows);
 
   return (
     <section className="review" aria-labelledby="review-title">
@@ -297,12 +381,6 @@ function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form
       <dl>
         {rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </dl>
-      {error && (
-        <p className="paymentError" role="alert">
-          {error.message}
-          {error.ticketId && <> <a href={`/ticket/${error.ticketId}`} target="_blank" rel="noopener">Open your ticket</a></>}
-        </p>
-      )}
       <div className="reviewActions">
         <button type="button" className="button outline" onClick={onEdit} disabled={submitting}><PencilLine size={16} /> Edit details</button>
         <button type="button" className="button" onClick={onConfirm} disabled={submitting}>
@@ -310,6 +388,63 @@ function Review({ values, onEdit, onConfirm, submitting, error }: { values: Form
         </button>
       </div>
     </section>
+  );
+}
+
+const [kitStart, kitEnd] = event.expoDays;
+
+/** Phone replacement for the review: everything the runner entered, the event dates and the kit, with an edit link per step. */
+function RunSummary({ values, onEdit, onConfirm, submitting }: { values: Form; onEdit: (step: number) => void; onConfirm: () => void; submitting: boolean }) {
+  const eventRows: SummaryRow[] = [
+    ['Race day', event.raceDate ? formatDate(event.raceDate) : 'To be announced'],
+    ['Kit collection', `${formatDateParts(kitStart, { day: 'numeric' })} & ${formatDateParts(kitEnd, { day: 'numeric', month: 'long' })}${event.kitCollectionHours ? ` · ${event.kitCollectionHours}` : ''}`],
+    ['Entry fee', formatFee()],
+  ];
+  return (
+    <section className="review runSummary" aria-labelledby="summary-title">
+      <p className="eyebrow dark">Registration summary</p>
+      <h2 id="summary-title">YOUR RUN.</h2>
+      <p className="formIntro">Check your details before paying. Your bib and certificate will use this name.</p>
+      {summaryGroups(values).map(([title, step, rows]) => (
+        <div className="summaryGroup" key={title}>
+          <header>
+            <h3>{title}</h3>
+            <button type="button" className="editLink" onClick={() => onEdit(step)} disabled={submitting}><PencilLine size={14} /> Edit</button>
+          </header>
+          <SummaryList rows={rows} />
+        </div>
+      ))}
+      <div className="summaryGroup">
+        <header><h3>Event</h3></header>
+        <SummaryList rows={eventRows} />
+      </div>
+      <div className="kitCard">
+        <p className="summaryTitle">YOUR PARTICIPATION KIT</p>
+        {event.kit.map((item) => <p className="tick" key={item}><Check size={15} />{item}</p>)}
+        <p className="summaryTitle">YOUR FINISHER BENEFITS</p>
+        {event.rewards.map((item) => <p className="tick" key={item}><Check size={15} />{item}</p>)}
+        <p className="pending"><ShieldCheck size={14} /> Secure payment by Razorpay: UPI, cards and netbanking.</p>
+      </div>
+      <div className="reviewActions">
+        <button type="button" className="button" onClick={onConfirm} disabled={submitting}>
+          {submitting ? 'Please wait…' : <>Proceed to payment · {formatFee()} <ArrowRight size={17} /></>}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function SummaryList({ rows }: { rows: SummaryRow[] }) {
+  return <dl>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
+}
+
+function PaymentError({ error }: { error?: CheckoutError }) {
+  if (!error) return null;
+  return (
+    <p className="payAlert" role="alert">
+      {error.message}
+      {error.ticketId && <> <a href={`/ticket/${error.ticketId}`} target="_blank" rel="noopener">Open your ticket</a></>}
+    </p>
   );
 }
 

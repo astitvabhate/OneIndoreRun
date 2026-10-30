@@ -34,11 +34,11 @@ export default async function CheckIn({ searchParams }: { searchParams: Promise<
 
       <section className="adminPanel">
         <h2>Runner forgot their ticket?</h2>
-        <p className="adminHint">Search by OIR number, mobile number or name, then tap them to check them in. A USB QR scanner also works here: click the box and scan.</p>
+        <p className="adminHint">Search by OIRI number, mobile number or name, then tap them to check them in. A USB QR scanner also works here: click the box and scan.</p>
         <form className="adminFilters" method="get">
           <label className="adminSearch">
             <Search size={16} />
-            <input type="search" name="q" defaultValue={q} placeholder="OIR-00012, 98765… or name" aria-label="Search runners" />
+            <input type="search" name="q" defaultValue={q} placeholder="OIRI-00012, 98765… or name" aria-label="Search runners" />
           </label>
           <button className="button small" type="submit">Search</button>
         </form>

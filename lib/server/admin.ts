@@ -230,9 +230,6 @@ export const adminEditSchema = z
     if (!isValidDate(data.dateOfBirth)) return;
     const age = ageOn(data.dateOfBirth, ageReferenceDate());
     if (age < event.minAge) ctx.addIssue({ code: 'custom', path: ['dateOfBirth'], message: `Runner must be at least ${event.minAge} on race day.` });
-    if (age < 18 && (!data.guardianName || !mobilePattern.test(data.guardianMobile ?? ''))) {
-      ctx.addIssue({ code: 'custom', path: ['guardianName'], message: 'Under-18 runners need a guardian name and 10-digit mobile.' });
-    }
   });
 
 export type AdminEdit = z.infer<typeof adminEditSchema>;
@@ -299,10 +296,10 @@ export function readFilters(params: Record<string, string | string[] | undefined
 
 /**
  * PostgREST `or` filter for a search box: any part of the name, mobile, email or city, or an exact
- * registration number ("OIR-00012" or "12"). Served by the trigram index on search_text.
+ * registration number ("OIRI-00012", older "OIR-00012", or "12"). Served by the trigram index on search_text.
  */
 function searchFilter(q: string) {
-  const needle = q.trim().toLowerCase().replace(/^oir-0*/, '').replace(/[*%\\"]/g, '');
+  const needle = q.trim().toLowerCase().replace(/^oiri?-0*/, '').replace(/[*%\\"]/g, '');
   if (!needle) return null;
   const text = `search_text.ilike."%${needle}%"`;
   return /^\d{1,9}$/.test(needle) ? `${text},reg_no.eq.${Number(needle)}` : text;

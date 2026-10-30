@@ -6,7 +6,9 @@
 .back { display: flex; align-items: center; gap: 8px; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .back:hover { color: var(--lime); }
 
-.regHero { padding: 80px var(--gutter) 65px; overflow: hidden; background: var(--sage); }
+.regHero { padding: 80px var(--gutter) 65px; overflow: hidden; background: var(--sage); transition: background-color .4s ease; }
+.regHero.paid { background: #b6e3bf; }
+.regHero.unpaid { background: #f3c4b9; }
 .regHero h1 { margin: 15px 0; font-size: clamp(4rem, 9vw, 9rem); line-height: .9; letter-spacing: -.06em; }
 .regHero > p:last-child { font-size: 16px; }
 
@@ -90,7 +92,7 @@
 .formIntro { margin: -16px 0 26px; color: #5f655f; font-size: 15px; }
 
 .guardian { margin-top: 34px; padding: 24px; border-left: 3px solid var(--orange); background: #fff; }
-.guardianNote { display: flex; margin-bottom: 20px; gap: 10px; font-size: 14px; line-height: 1.5; }
+.guardianNote { display: flex; gap: 10px; font-size: 14px; line-height: 1.5; }
 .guardianNote svg { flex: none; margin-top: 2px; color: var(--orange); }
 
 .consents { display: grid; gap: 16px; }
@@ -99,6 +101,7 @@
 .consents input { width: 20px; min-width: 20px; height: 20px; margin-top: 1px; accent-color: var(--orange); }
 
 .formSubmit { width: 100%; min-height: 60px; font-size: 13px; }
+.stepNav, .stepBar { display: none; }
 
 /* Review and notice ----------------------------------------------------------- */
 
@@ -131,16 +134,24 @@
 
 /* Responsive ------------------------------------------------------------------ */
 
-/* On tablets and phones the form comes first and the summary follows as a short recap;
-   the step strip scrolls sideways, with a fade at the edge to show there is more. */
+/* On tablets and phones the form shows one step at a time with Back / Next, and the full
+   summary (RunSummary) at the end replaces both the step strip and the sidebar recap. */
+@keyframes stepIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
 @media (max-width: 850px) {
   .regLayout { padding-top: 50px; grid-template-columns: minmax(0, 1fr); }
-  .summary { position: static; }
-  .summary .summaryTitle, .summary .tick, .summary hr { display: none; }
-  .progress { overflow-x: auto; gap: 22px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
-  .progress::-webkit-scrollbar { display: none; }
-  .progress a, .progress span { flex: none; }
-  .progress > :last-child { padding-right: 40px; }
+  .progress, .summary, .formSubmit { display: none; }
+  .regLayout .formFields section { margin-bottom: 32px; padding-bottom: 0; border-bottom: 0; animation: stepIn .35s ease both; }
+  .regLayout .formFields section:not(.current) { display: none; }
+  .stepBar { display: block; margin-bottom: 28px; }
+  .stepBar span { color: #6b716b; font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; }
+  .stepBar i { display: block; height: 4px; margin-top: 8px; background: #e0e3db; }
+  .stepBar b { display: block; height: 100%; background: var(--orange); transition: width .35s ease; }
+  .stepNav { display: flex; gap: 10px; }
+  .stepNav .button { flex: 1; min-height: 58px; }
+  .stepNav .button.outline { flex: none; width: 58px; padding: 0; }
+}
+@media (max-width: 850px) and (prefers-reduced-motion: reduce) {
+  .regLayout .formFields section { animation: none; }
 }
 
 @media (max-width: 500px) {
@@ -150,12 +161,9 @@
   .regHero h1 { margin: 10px 0; font-size: clamp(2.8rem, 14vw, 3.6rem); }
   .regHero > p:last-child { font-size: 15px; }
   .regLayout { padding-top: 36px; }
-  .progress { padding: 14px 20px; gap: 18px; }
-  .progress a, .progress span { font-size: 10px; }
   .formGrid, .choiceGrid { grid-template-columns: minmax(0, 1fr); }
   .formGrid .wide { grid-column: auto; }
   .choice span { min-height: 72px; flex-direction: row; align-items: center; }
-  .formFields section { margin-bottom: 44px; padding-bottom: 48px; }
   .formFields h2, .review h2 { margin-bottom: 26px; }
   .summary { padding: 22px; }
   .guardian { padding: 18px; }
@@ -185,3 +193,25 @@
 .paymentLoader svg { color: var(--ink); }
 .paymentLoader b { font: 800 22px/1.15 var(--display); letter-spacing: -.02em; text-transform: uppercase; }
 .paymentLoader p { color: #5f655f; font-size: 15px; line-height: 1.5; }
+
+/* Phone summary (RunSummary) ------------------------------------------------- */
+
+.summaryGroup { margin-bottom: 26px; }
+.summaryGroup header { display: flex; padding-bottom: 10px; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--ink); }
+.summaryGroup h3 { font: 800 1.1rem var(--display); letter-spacing: -.02em; text-transform: uppercase; }
+.editLink { display: inline-flex; padding: 6px 0; align-items: center; gap: 6px; color: var(--orange); font: 700 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.runSummary dl { border-top: 0; }
+.runSummary dl div { padding: 11px 0; gap: 12px; grid-template-columns: 110px minmax(0, 1fr); }
+.runSummary dt { line-height: 1.6; }
+.runSummary dd { font-size: 15px; }
+.kitCard { padding: 22px; background: var(--ink); color: #f1f3ec; }
+/* The pay button is fixed to the bottom of the screen; the summary leaves room for it at the end. */
+.runSummary { padding-bottom: 40px; }
+.runSummary .reviewActions { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; margin: 0; padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom)); background: var(--paper); box-shadow: 0 -8px 20px rgba(16, 22, 19, .08); }
+.kitCard .summaryTitle:first-child { margin-top: 0; }
+.kitCard .tick { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.85; }
+
+/* Checkout problem (cancelled, failed, unconfirmed): a red strip above the banner. */
+.payAlert { padding: 14px var(--gutter); background: #c72e12; color: #fff; font: 600 15px/1.5 var(--display); }
+.payAlert.success { background: #1f7a3a; }
+.payAlert a { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }

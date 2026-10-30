@@ -19,7 +19,7 @@ export default async function ImportPage() {
         <Link href="/admin" className="adminIconLink dark"><ArrowLeft size={15} /> Dashboard</Link>
         <h2>Import runners from a CSV</h2>
         <p className="adminHint">
-          For group entries such as a school&apos;s students. Every valid row becomes a <b>paid</b> registration with its own OIR number and ticket,
+          For group entries such as a school&apos;s students. Every valid row becomes a <b>paid</b> registration with its own OIRI number and ticket,
           recorded as paid offline (no Razorpay payment). Runners already registered for that race are skipped, so importing the same file twice is safe.
           Up to {maxImportRows.toLocaleString('en-IN')} rows per file.
         </p>

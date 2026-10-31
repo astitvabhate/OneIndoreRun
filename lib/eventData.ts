@@ -12,7 +12,7 @@ const races: Race[] = [
   { slug: '10km', distance: '10 KM', label: 'Own the long stretch' },
 ];
 
-const fee = 200;
+const fee = 1; // TEMP: live payment test, restore to 200
 
 // Race day as 'YYYY-MM-DD' once it is fixed. Until then, ages are checked against the first
 // expo day, which is never later than race day, so nobody under the minimum age slips through.

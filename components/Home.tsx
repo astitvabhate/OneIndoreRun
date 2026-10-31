@@ -11,6 +11,7 @@ import { KitSection } from './sections/KitSection';
 import { RaceDayBar } from './sections/RaceDayBar';
 import { RaceSection } from './sections/RaceSection';
 import { RouteSection } from './sections/RouteSection';
+import { SaveWaterBanner } from './sections/SaveWaterBanner';
 import { WhyRunSection } from './sections/WhyRunSection';
 
 // The home page only composes sections; each section owns its markup and behavior.
@@ -20,6 +21,7 @@ export function Home() {
       <Navbar />
       <main>
         <HeroSection />
+        <SaveWaterBanner />
         <RaceDayBar />
         <AboutSection />
         <KitSection />

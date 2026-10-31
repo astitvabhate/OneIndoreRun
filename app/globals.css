@@ -140,6 +140,15 @@ em { color: var(--orange); font-style: italic; }
 .menu { display: none; padding: 8px; color: #fff; }
 .mobileNav { display: none; }
 
+.saveWater { display: flex; padding-block: 12px; overflow: hidden; background: #15a3ea; color: #fff; font: 600 14px/1.4 var(--ui); white-space: nowrap; }
+.saveWaterTrack { display: flex; width: max-content; animation: marquee 40s linear infinite; }
+.saveWaterTrack > div { display: flex; }
+.saveWaterTrack span { display: flex; padding-right: 48px; align-items: center; gap: 10px; }
+.saveWater svg { width: 18px; height: 18px; flex: none; fill: currentColor; }
+.saveWater:hover .saveWaterTrack { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .saveWaterTrack { animation: none; } }
+
 /* -------------------------------------------------------------------------- */
 /* Hero and race bar                                                           */
 /* -------------------------------------------------------------------------- */
@@ -451,6 +460,7 @@ footer { padding: 60px var(--gutter) 28px; border-top: 1px solid var(--line-dark
   .menu { display: block; }
   .logo, .nav.isSolid .logo { width: 94px; height: 72px; }
   .logo img { object-position: left center; }
+  .saveWater { padding-block: 10px; font-size: 13px; }
   .mobileNav {
     position: absolute;
     top: 100%;

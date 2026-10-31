@@ -319,7 +319,7 @@ em { color: var(--orange); font-style: italic; }
 .expo h2 { margin: 18px 0; }
 .expo aside { display: flex; margin-bottom: 16px; align-items: center; gap: 10px; }
 .expo aside b { color: var(--orange); font: 800 clamp(5.5rem, 11vw, 10rem)/.85 var(--display); letter-spacing: -.07em; }
-.expo aside span { font: 600 11px/1.4 var(--ui); letter-spacing: .06em; }
+.expo aside span { font: 800 14px/1.4 var(--ui); letter-spacing: .06em; }
 .expoNote { padding-top: 21px; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.8; }
 .expoKit { display: inline-flex; margin-top: 18px; padding: 11px 14px; gap: 9px; background: var(--sage); font-size: 13px; line-height: 1.5; }
 .expoKit svg { flex: none; margin-top: 2px; color: var(--orange); }
@@ -479,11 +479,11 @@ footer { padding: 60px var(--gutter) 28px; border-top: 1px solid var(--line-dark
   .heroActions .button { min-width: 0; min-height: 52px; flex: 1; }
 
   .racebar { padding: 14px 16px; }
-  /* Too narrow for a side button: the link drops under the details as a plain underlined link. */
+  /* Too narrow for a side button: the same dark button drops under the details. */
   .racebarHalf { grid-template-columns: minmax(0, 1fr); }
-  .racebarCta { grid-row: auto; grid-column: 1; justify-self: start; padding: 0; gap: 4px; background: none; color: inherit; font: 800 clamp(10px, 2.6vw, 12px) var(--ui); text-decoration: underline; text-underline-offset: 3px; }
+  .racebarCta { grid-row: auto; grid-column: 1; justify-self: start; margin-top: 6px; padding: 9px 12px; gap: 6px; font-size: clamp(10px, 2.6vw, 11px); }
   .racebarCta:hover { transform: none; }
-  .racebarCta svg { width: 14px; height: 14px; }
+  .racebarCta svg { width: 13px; height: 13px; }
 
   .aboutCopy { padding: 85px 24px 58px; }
   .aboutVisual { min-height: 360px; }

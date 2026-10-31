@@ -13,7 +13,7 @@ export const photos = [
   '/assets/NG_02256.jpg',
 ];
 
-export const raceImages = ['/assets/3km.png', '/assets/5km.png', '/assets/10km.png'];
+export const raceImages = ['/assets/3km.jpeg', '/assets/5km.jpeg', '/assets/10km.jpeg'];
 
 export const benefits = [
   ['01', 'Run with the city', 'Experience Indore through a community-powered running event.'],
